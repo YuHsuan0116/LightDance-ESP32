@@ -1,7 +1,7 @@
 #pragma once
 
-#include "led_def.h"
 #include "driver/i2c_master.h"
+#include "led_def.h"
 
 /**
  * @brief Initialize an I2C master bus on I2C_NUM_0.

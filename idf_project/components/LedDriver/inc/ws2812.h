@@ -1,9 +1,9 @@
 #pragma once
 
-#include "led_def.h"
 #include "driver/rmt_encoder.h"
 #include "driver/rmt_tx.h"
 #include "esp_attr.h"
+#include "led_def.h"
 
 /** @brief WS2812B encoder clock resolution in Hz (10 MHz). */
 #define WS2812_RESOLUTION 10000000
