@@ -99,3 +99,25 @@ esp_err_t ChannelHandle::wait_done() {
     }
     return ret;
 }
+
+esp_err_t ChannelHandle::set_GRB(const color_t& GRB) {
+    if(type != LED_TYPE_STRIP && type != LED_TYPE_OF) {
+        ESP_LOGE(TAG, "set_GRB before config");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if(type == LED_TYPE_STRIP) {
+        esp_err_t ret = ws2812.set_GRB(GRB);
+        if(ret != ESP_OK) {
+            ESP_LOGE(TAG, "ws2812 set_GRB failed: %s", esp_err_to_name(ret));
+        }
+        return ret;
+    }
+
+    // LED_TYPE_OF
+    esp_err_t ret = pca9955.set_GRB(GRB);
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "pca9955 set_GRB failed: %s", esp_err_to_name(ret));
+    }
+    return ret;
+}

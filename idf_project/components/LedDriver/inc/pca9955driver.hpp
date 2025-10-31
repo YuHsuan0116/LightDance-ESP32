@@ -87,6 +87,21 @@ class pca9955Driver {
      */
     int get_or_register_device(uint8_t addr);
 
+    /**
+     * @brief Set PCA9955 output to the specified GRB color.
+     *
+     * @param[in] GRB  Target color value in GRB order.
+     * @return ESP_OK on success; otherwise an esp_err_t from write().
+     */
+    esp_err_t set_GRB(const color_t& GRB);
+
+    /**
+     * @brief Send the IREF (current reference) command to PCA9955.
+     *
+     * @return ESP_OK on success; otherwise an esp_err_t from I²C transmit.
+     */
+    esp_err_t send_IREF();
+
   private:
     uint8_t addr;                       /**< I2C address of the device. */
     uint8_t pca_channel;                /**< PCA9955 channel index. */
@@ -94,4 +109,5 @@ class pca9955Driver {
     i2c_master_bus_handle_t bus_handle; /**< I2C bus handle. */
     i2c_master_dev_handle_t dev_handle; /**< Pointer to I2C device handle. */
     uint8_t cmd[4];                     /**< Scratch buffer for I2C Tx */
+    bool need_reset_IREF = false;       /**< Flag indicating whether IREF needs to be reset. */
 };

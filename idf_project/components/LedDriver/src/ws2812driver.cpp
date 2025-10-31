@@ -91,3 +91,19 @@ esp_err_t ws2812Driver::wait_done() {
     }
     return rmt_tx_wait_all_done(channel, -1);
 }
+
+esp_err_t ws2812Driver::set_GRB(const color_t& GRB) {
+    color_t data[led_count];
+    for(int i = 0; i < led_count; i++) {
+        data[i] = GRB;
+    }
+    esp_err_t ret1 = write((const color_t*)data);
+    esp_err_t ret2 = wait_done();
+    if(ret1 != ESP_OK) {
+        return ret1;
+    }
+    if(ret2 != ESP_OK) {
+        return ret2;
+    }
+    return ESP_OK;
+}

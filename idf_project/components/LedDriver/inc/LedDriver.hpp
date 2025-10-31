@@ -58,6 +58,16 @@ class LedDriver {
      */
     esp_err_t wait_all_done();
 
+    /**
+     * @brief Set the GRB color for all LED channels.
+     *
+     * Propagates the specified color to each channel handle.
+     *
+     * @param[in] GRB  Target color value in GRB order.
+     * @return ESP_OK if all channels succeed; otherwise the last error encountered.
+     */
+    esp_err_t set_GRB(const color_t& GRB);
+
   private:
     int ch_num;                                           /**< Number of configured channels, -1 if none. */
     i2c_master_bus_handle_t bus_handle;                   /**< I2C master bus handle. */

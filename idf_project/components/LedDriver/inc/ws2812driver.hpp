@@ -35,6 +35,15 @@ class ws2812Driver {
      */
     esp_err_t wait_done();
 
+    /**
+     * @brief Set all WS2812 LEDs to the specified GRB color.
+     * @param[in] GRB  The color value to be applied to all LEDs.
+     * @return
+     *     - ESP_OK on success
+     *     - ESP_FAIL or other esp_err_t from lower-level write/wait_done functions
+     */
+    esp_err_t set_GRB(const color_t& GRB);
+
   private:
     bool rmt_activate;            /**< Whether the RMT channel is active. */
     uint8_t led_count;            /**< Number of LEDs to transmit. */

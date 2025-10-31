@@ -165,3 +165,19 @@ esp_err_t LedDriver::wait_all_done() {
     }
     return agg;
 }
+
+esp_err_t LedDriver::set_GRB(const color_t& GRB) {
+    if(ch_num < 0) {
+        return ESP_OK;
+    }
+
+    esp_err_t agg = ESP_OK;
+    for(int i = 0; i < ch_num; i++) {
+        esp_err_t r = channel_handle[i].set_GRB(GRB);
+        if(r != ESP_OK) {
+            ESP_LOGE(TAG, "set_GRB ch %d failed: %s", i, esp_err_to_name(r));
+            agg = r;
+        }
+    }
+    return agg;
+}

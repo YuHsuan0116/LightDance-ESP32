@@ -31,6 +31,16 @@ class ChannelHandle {
      */
     esp_err_t wait_done();
 
+    /**
+     * @brief Set the GRB color for the current LED channel.
+     *
+     * Calls the corresponding driver (WS2812 or PCA9955) based on channel type.
+     *
+     * @param[in] GRB  Target color value in GRB order.
+     * @return ESP_OK on success; otherwise an esp_err_t from the underlying driver.
+     */
+    esp_err_t set_GRB(const color_t& GRB);
+
   private:
     LED_TYPE_t type;       /**< Selected backend type. */
     pca9955Driver pca9955; /**< PCA9955 backend driver. */

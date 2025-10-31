@@ -33,11 +33,19 @@ esp_err_t pca9955Driver::config(const led_config_t config) {
 }
 
 esp_err_t pca9955Driver::write(const color_t* colors) {
+    if(need_reset_IREF) {
+        need_reset_IREF = false;
+        send_IREF();
+    }
     cmd[0] = PWM_addr[pca_channel];
     cmd[1] = colors[0].red;
     cmd[2] = colors[0].green;
     cmd[3] = colors[0].blue;
-    i2c_master_transmit(dev_handle, cmd, sizeof(uint8_t) * 4, -1);
+    esp_err_t ret = i2c_master_transmit(dev_handle, cmd, sizeof(uint8_t) * 4, 100);
+    if(ret != ESP_OK) {
+        need_reset_IREF = true;
+        return ret;
+    }
     return ESP_OK;
 }
 
@@ -96,7 +104,7 @@ int pca9955Driver::get_or_register_device(uint8_t addr) {
 
     // 4) Initialize device (set IREFALL)
     uint8_t local_cmd[2] = {IREFALL_addr, (uint8_t)OF_MAXIMUM_BRIGHTNESS};
-    err = i2c_master_transmit(dev, local_cmd, sizeof(local_cmd), -1);
+    err = i2c_master_transmit(dev, local_cmd, sizeof(local_cmd), 10);
     if(err != ESP_OK) {
         (void)i2c_master_bus_rm_device(dev);  // best-effort cleanup
         return -1;
@@ -108,4 +116,15 @@ int pca9955Driver::get_or_register_device(uint8_t addr) {
     dev_handles[index] = dev;
     registered++;
     return index;
+}
+
+esp_err_t pca9955Driver::set_GRB(const color_t& GRB) {
+    esp_err_t ret = write(&GRB);
+    return ret;
+}
+
+esp_err_t pca9955Driver::send_IREF() {
+    uint8_t local_cmd[2] = {IREFALL_addr, (uint8_t)OF_MAXIMUM_BRIGHTNESS};
+    esp_err_t err = i2c_master_transmit(dev_handle, local_cmd, sizeof(local_cmd), 10);
+    return err;
 }
