@@ -1,4 +1,6 @@
 #include <string.h>
+#include <tuple>
+#include <vector>
 #include "driver/sdmmc_host.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
@@ -62,6 +64,23 @@ class SD_CARD {
         return ESP_OK;
     }
 
+    esp_err_t sd_read_grb(const char* path, std::vector<std::tuple<int, int, int>>& vec) {
+        FILE* f = fopen(path, "r");
+        if(f == NULL) {
+            return ESP_FAIL;
+        }
+
+        vec.clear();
+
+        int r, g, b;
+        while(fscanf(f, "%d %d %d", &g, &r, &b) == 3) {
+            vec.push_back(std::make_tuple(g, r, b));
+        }
+
+        fclose(f);
+        return ESP_OK;
+    }
+
   private:
     sdmmc_host_t host;
     sdmmc_slot_config_t slot_config;
@@ -76,6 +95,7 @@ void app_main(void) {
     sd_card.print_card_info();
 
     const char* file_hello = MOUNT_POINT "/hello.txt";
+    const char* file_table = MOUNT_POINT "/table.txt";
     const char* data = "Hello\n";
 
     esp_err_t ret;
@@ -93,4 +113,10 @@ void app_main(void) {
         return;
     }
     printf("%s\n", buffer);
+
+    std::vector<std::tuple<int, int, int>> colors;
+    ret = sd_card.sd_read_grb(file_table, colors);
+    for(auto color: colors) {
+        printf("%d %d %d\n", std::get<0>(color), std::get<1>(color), std::get<2>(color));
+    }
 }
