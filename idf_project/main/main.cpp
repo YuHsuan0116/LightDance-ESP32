@@ -6,24 +6,91 @@
 extern "C" void app_main(void);
 
 #define MOUNT_POINT "/sdcard"
+#define MAX_CHAR_SIZE 256
+class SD_CARD {
+  public:
+    SD_CARD() {
+        host = SDMMC_HOST_DEFAULT();
+
+        slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+        slot_config.width = 4;
+        slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+
+        esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+            .format_if_mount_failed = false,
+            .max_files = 5,
+            .allocation_unit_size = 16 * 1024,
+
+        };
+
+        esp_vfs_fat_sdmmc_mount(MOUNT_POINT, &host, &slot_config, &mount_config, &card);
+    }
+    ~SD_CARD() {
+        esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
+    }
+
+    void print_card_info() {
+        sdmmc_card_print_info(stdout, card);
+    }
+
+    esp_err_t sd_write_file(const char* path, const char* data) {
+        FILE* f = fopen(path, "w");
+        if(f == NULL) {
+            return ESP_FAIL;
+        }
+
+        fprintf(f, data);
+        fclose(f);
+
+        return ESP_OK;
+    }
+
+    esp_err_t sd_read_file(const char* path, char* buffer) {
+        FILE* f = fopen(path, "r");
+        if(f == NULL) {
+            return ESP_FAIL;
+        }
+
+        fgets(buffer, MAX_CHAR_SIZE, f);
+        fclose(f);
+
+        char* pos = strchr(buffer, '\n');
+        if(pos) {
+            *pos = '\0';
+        }
+
+        return ESP_OK;
+    }
+
+  private:
+    sdmmc_host_t host;
+    sdmmc_slot_config_t slot_config;
+    sdmmc_card_t* card;
+    esp_vfs_fat_mount_config_t mount_config;
+    const char* TAG = "SD_CARD";
+};
 
 void app_main(void) {
-    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-        .format_if_mount_failed = false,
-        .max_files = 5,
-        .allocation_unit_size = 16 * 1024,
+    const char* TAG = "main";
+    SD_CARD sd_card;
+    sd_card.print_card_info();
 
-    };
-    sdmmc_card_t* card;
+    const char* file_hello = MOUNT_POINT "/hello.txt";
+    const char* data = "Hello\n";
 
-    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot_config.width = 4;
-    slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+    esp_err_t ret;
+    ret = sd_card.sd_write_file(file_hello, data);
+    if(ret != ESP_OK) {
+        ESP_LOGI(TAG, "write file failed");
+        return;
+    }
+    ESP_LOGI(TAG, "write file successed");
 
-    esp_vfs_fat_sdmmc_mount(MOUNT_POINT, &host, &slot_config, &mount_config, &card);
-
-    sdmmc_card_print_info(stdout, card);
-
-    esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
+    char buffer[MAX_CHAR_SIZE];
+    ret = sd_card.sd_read_file(file_hello, buffer);
+    if(ret != ESP_OK) {
+        ESP_LOGI(TAG, "read file failed");
+        return;
+    }
+    printf("%s\n", buffer);
 }
