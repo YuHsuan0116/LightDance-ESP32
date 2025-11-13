@@ -15,7 +15,8 @@ SD_CARD::SD_CARD() {
     };
 
     esp_vfs_fat_sdmmc_mount(MOUNT_POINT, &host, &slot_config, &mount_config, &card);
-    print_card_info();
+    // print_card_info();
+    sdmmc_card_print_info(stdout, card);
 }
 
 SD_CARD::~SD_CARD() {
