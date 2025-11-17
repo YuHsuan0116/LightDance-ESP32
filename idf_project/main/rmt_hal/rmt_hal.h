@@ -25,11 +25,10 @@ typedef struct {
 } encoder_t;
 
 typedef struct {
-    bool rmt_activate;
+    bool initialized;
     uint8_t led_count;
     rmt_channel_handle_t rmt_channel;
     rmt_encoder_handle_t rmt_encoder;
-
 } ws2812b_handle_t;
 
 size_t encode(rmt_encoder_t* rmt_encoder, rmt_channel_handle_t rmt_channel, const void* buffer, size_t buffer_size, rmt_encode_state_t* ret_state);

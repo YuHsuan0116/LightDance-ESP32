@@ -11,13 +11,15 @@ extern "C" {
 #define I2C_TIMEOUT_MS 100
 #define I2C_FREQ 100000
 
+#define PCA9955B_MAXIMUM_NUMBER 8
 #define IREFALL_ADDR 0x45
 
 typedef struct {
     bool need_reset_IREF;
-    uint8_t addr;
+    uint8_t i2c_addr;
     uint8_t pca_channel;
     uint8_t reg_addr;
+    int8_t dev_list_idx;
     i2c_master_dev_handle_t i2c_dev_handle;
 } pca9955b_handle_t;
 
@@ -28,12 +30,15 @@ typedef struct {
     bool used[5];
 } i2c_dev_entry_t;
 
-i2c_master_dev_handle_t find_i2c_handle(uint8_t addr);
+int8_t find_i2c_dev_list_idx(uint8_t addr);
+
+esp_err_t pca9955b_add_i2c_dev_list(pca9955b_handle_t* pca9955);
+
+esp_err_t i2c_dev_list_add(uint8_t i2c_addr, int8_t i2c_dev_list_idx);
 
 esp_err_t i2c_bus_init(gpio_num_t i2c_gpio_sda, gpio_num_t i2c_gpio_scl, i2c_master_bus_handle_t* ret_i2c_bus_handle);
 
 esp_err_t i2c_write_hal(i2c_master_dev_handle_t i2c_dev_handle, uint8_t* const buffer, size_t const buffer_size, size_t const i2c_timeout_ms);
-// i2c_write_hal(I2C_NUM_0, 0x5e, buffer, buffer_size, I2C_TIMEOUT_MS);
 
 esp_err_t pca9955b_write_IREFALL(uint8_t IREF_val, pca9955b_handle_t* pca9955b);
 

@@ -77,11 +77,30 @@ size_t encode(rmt_encoder_t* rmt_encoder, rmt_channel_handle_t rmt_channel, cons
 }
 
 esp_err_t del_encoder(rmt_encoder_t* rmt_encoder) {
+    esp_err_t ret = ESP_OK;
+    esp_err_t last_error = ESP_OK;
+
+    if(rmt_encoder == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     encoder_t* ws2812b_encoder = __containerof(rmt_encoder, encoder_t, base);
-    rmt_del_encoder(ws2812b_encoder->bytes_encoder);
-    rmt_del_encoder(ws2812b_encoder->copy_encoder);
+
+    if(ws2812b_encoder->bytes_encoder) {
+        ret = rmt_del_encoder(ws2812b_encoder->bytes_encoder);
+        if(ret != ESP_OK) {
+            last_error = ret;
+        }
+    }
+
+    if(ws2812b_encoder->copy_encoder) {
+        ret = rmt_del_encoder(ws2812b_encoder->copy_encoder);
+        if(ret != ESP_OK) {
+            last_error = ret;
+        }
+    }
     free(ws2812b_encoder);
-    return ESP_OK;
+    return last_error;
 }
 
 esp_err_t encoder_reset(rmt_encoder_t* rmt_encoder) {
@@ -93,6 +112,13 @@ esp_err_t encoder_reset(rmt_encoder_t* rmt_encoder) {
 }
 
 esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
+    esp_err_t ret = ESP_OK;
+    if(ret_encoder == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *ret_encoder = NULL;
+
     encoder_t* ws2812b_encoder = (encoder_t*)rmt_alloc_encoder_mem(sizeof(encoder_t));
     if(!ws2812b_encoder) {
         return ESP_ERR_NO_MEM;
@@ -102,11 +128,23 @@ esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
     ws2812b_encoder->base.del = del_encoder;
     ws2812b_encoder->base.reset = encoder_reset;
 
+    ws2812b_encoder->bytes_encoder = NULL;
+    ws2812b_encoder->copy_encoder = NULL;
+
     rmt_bytes_encoder_config_t rmt_bytes_encoder_config = RMT_BYTES_ENCODER_CONFIG_DEFAULT();
-    rmt_new_bytes_encoder(&rmt_bytes_encoder_config, &ws2812b_encoder->bytes_encoder);
+    ret = rmt_new_bytes_encoder(&rmt_bytes_encoder_config, &ws2812b_encoder->bytes_encoder);
+    if(ret != ESP_OK) {
+        free(ws2812b_encoder);
+        return ret;
+    }
 
     rmt_copy_encoder_config_t rmt_copy_encoder_config = {};
-    rmt_new_copy_encoder(&rmt_copy_encoder_config, &ws2812b_encoder->copy_encoder);
+    ret = rmt_new_copy_encoder(&rmt_copy_encoder_config, &ws2812b_encoder->copy_encoder);
+    if(ret != ESP_OK) {
+        rmt_del_encoder(ws2812b_encoder->bytes_encoder);
+        free(ws2812b_encoder);
+        return ret;
+    }
 
     ws2812b_encoder->reset_code = WS2812B_RESET_CODE_DEFAULT();
 
@@ -115,6 +153,14 @@ esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
 }
 
 esp_err_t ws2812b_new_channel(gpio_num_t rmt_gpio, rmt_channel_handle_t* ret_channel) {
+    esp_err_t ret = ESP_OK;
+
+    if(ret_channel == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *ret_channel = NULL;
+
     rmt_tx_channel_config_t rmt_tx_channel_config = {
         .gpio_num = rmt_gpio,
         .clk_src = RMT_CLK_SRC_DEFAULT,
@@ -122,46 +168,117 @@ esp_err_t ws2812b_new_channel(gpio_num_t rmt_gpio, rmt_channel_handle_t* ret_cha
         .mem_block_symbols = 64,
         .trans_queue_depth = 1,
     };
-    rmt_new_tx_channel(&rmt_tx_channel_config, ret_channel);
-    rmt_enable((*ret_channel));
+
+    ret = rmt_new_tx_channel(&rmt_tx_channel_config, ret_channel);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = rmt_enable((*ret_channel));
+    if(ret != ESP_OK) {
+        rmt_del_channel(*ret_channel);
+        *ret_channel = NULL;
+        return ret;
+    }
+
     return ESP_OK;
 }
 
 esp_err_t ws2812b_config(led_config_t* led_config, ws2812b_handle_t* ws2812b) {
+    esp_err_t ret = ESP_OK;
+
+    if(led_config == NULL || ws2812b == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(led_config->led_count == 0 || led_config->led_count > WS2812B_MAXIMUM_LED_COUNT) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ws2812b->led_count = led_config->led_count;
-    ws2812b_new_channel(led_config->rmt_gpio, &ws2812b->rmt_channel);
-    ws2812b_new_encoder(&ws2812b->rmt_encoder);
-    ws2812b->rmt_activate = true;
+    ws2812b->initialized = false;
+
+    ret = ws2812b_new_channel(led_config->rmt_gpio, &ws2812b->rmt_channel);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = ws2812b_new_encoder(&ws2812b->rmt_encoder);
+    if(ret != ESP_OK) {
+        (void)rmt_disable(ws2812b->rmt_channel);
+        (void)rmt_del_channel(ws2812b->rmt_channel);
+        ws2812b->rmt_channel = NULL;
+        return ret;
+    }
+
+    ws2812b->initialized = true;
     return ESP_OK;
 }
 
 esp_err_t ws2812b_write(const uint8_t* buffer, const size_t buffer_size, ws2812b_handle_t* ws2812b) {
-    rmt_transmit(ws2812b->rmt_channel, ws2812b->rmt_encoder, buffer, buffer_size, &rmt_tx_config);
+    esp_err_t ret = ESP_OK;
+
+    if(buffer == NULL || ws2812b == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!ws2812b->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if(ws2812b->rmt_channel == NULL || ws2812b->rmt_encoder == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ret = rmt_transmit(ws2812b->rmt_channel, ws2812b->rmt_encoder, buffer, buffer_size, &rmt_tx_config);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
     return ESP_OK;
 }
 
 esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
-    rmt_tx_wait_all_done(ws2812b->rmt_channel, RMT_TIMEOUT_MS);
+    esp_err_t ret = ESP_OK;
+    esp_err_t last_error = ESP_OK;
+
+    if(ws2812b == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!ws2812b->initialized) {
+        return ESP_OK;
+    }
+
+    if(ws2812b->rmt_channel) {
+        ret = rmt_tx_wait_all_done(ws2812b->rmt_channel, RMT_TIMEOUT_MS);
+        if(ret != ESP_OK) {
+            last_error = ret;
+        }
+    }
 
     if(ws2812b->rmt_encoder) {
         if(ws2812b->rmt_encoder->del) {
-            (void)ws2812b->rmt_encoder->del(ws2812b->rmt_encoder);
+            ret = ws2812b->rmt_encoder->del(ws2812b->rmt_encoder);
+            if(ret != ESP_OK) {
+                last_error = ret;
+            }
         }
         ws2812b->rmt_encoder = NULL;
     }
 
-    rmt_disable(ws2812b->rmt_channel);
-    rmt_del_channel(ws2812b->rmt_channel);
+    if(ws2812b->rmt_channel) {
+        ret = rmt_disable(ws2812b->rmt_channel);
+        if(ret != ESP_OK) {
+            last_error = ret;
+        }
 
-    return ESP_OK;
+        ret = rmt_del_channel(ws2812b->rmt_channel);
+        if(ret != ESP_OK) {
+            last_error = ret;
+        }
+
+        ws2812b->rmt_channel = NULL;
+    }
+
+    ws2812b->initialized = false;
+    ws2812b->led_count = 0;
+
+    return last_error;
 }
-
-// esp_err_t ws2812b_write_rgb(uint8_t const r, uint8_t const g, uint8_t const b, ws2812b_handle_t* ws2812b) {
-//     for(int i = 0; i < ws2812b->led_count; i++) {
-//         ws2812b->cmd[3 * i] = g;
-//         ws2812b->cmd[3 * i + 1] = r;
-//         ws2812b->cmd[3 * i + 2] = b;
-//     }
-//     ws2812b_write(ws2812b->cmd, ws2812b->cmd_size, ws2812b);
-//     return ESP_OK;
-// }

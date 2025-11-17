@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 typedef struct {
+    bool initialized;
     int channel_number;
     i2c_master_bus_handle_t bus_handle;
     channel_handle_t channel_handle[MAX_CHANNEL_COUNT];
