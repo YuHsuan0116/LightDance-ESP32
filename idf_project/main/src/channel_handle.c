@@ -1,4 +1,4 @@
-#include "channel_handle.h"
+#include "inc/channel_handle.h"
 
 esp_err_t channel_handle_config(led_config_t* led_config, channel_handle_t* channel_handle) {
     esp_err_t ret = ESP_OK;

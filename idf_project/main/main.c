@@ -1,9 +1,9 @@
 #include <stdio.h>
 
 #include <freertos/FreeRTOS.h>
-#include "def.h"
 #include "esp_timer.h"
-#include "led_driver/led_driver.h"
+#include "inc/def.h"
+#include "inc/led_driver.h"
 
 #define N_STRIP_CH 8
 #define N_OF_CH 0

@@ -1,11 +1,11 @@
-#include "i2c_hal.h"
+#include "inc/pca9955b_hal.h"
 
-static const uint8_t PWM_addr[5] = {0x88, 0x8B, 0x8E, 0x91, 0x94};
+static const uint8_t PCA9955B_PWM_addr[5] = {0x88, 0x8B, 0x8E, 0x91, 0x94};
 
-static i2c_dev_entry_t i2c_dev_list[PCA9955B_MAXIMUM_NUMBER];
+static i2c_dev_entry_t i2c_dev_list[PCA9955B_MAXIMUM_COUNT];
 
 int8_t find_i2c_dev_list_idx(uint8_t addr) {
-    for(int idx = 0; idx < PCA9955B_MAXIMUM_NUMBER; idx++) {
+    for(int idx = 0; idx < PCA9955B_MAXIMUM_COUNT; idx++) {
         if(i2c_dev_list[idx].addr == addr) {
             return idx;
         }
@@ -73,7 +73,7 @@ esp_err_t pca9955b_write_IREFALL(uint8_t IREF_val, pca9955b_handle_t* pca9955b) 
 
     uint8_t cmd[2];
     uint8_t cmd_size = 2;
-    cmd[0] = IREFALL_ADDR;
+    cmd[0] = PCA9955B_IREFALL_ADDR;
     cmd[1] = IREF_val;
 
     ret = i2c_write_hal(pca9955b->i2c_dev_handle, cmd, cmd_size, I2C_TIMEOUT_MS);
@@ -135,7 +135,7 @@ esp_err_t pca9955b_config(led_config_t* led_config, pca9955b_handle_t* pca9955b)
     memset(pca9955b, 0, sizeof(pca9955b_handle_t));
     pca9955b->i2c_addr = led_config->i2c_addr;
     pca9955b->pca_channel = led_config->pca_channel;
-    pca9955b->reg_addr = PWM_addr[led_config->pca_channel];
+    pca9955b->reg_addr = PCA9955B_PWM_addr[led_config->pca_channel];
     pca9955b->need_reset_IREF = true;
     pca9955b->dev_list_idx = find_i2c_dev_list_idx(pca9955b->i2c_addr);
 
@@ -157,7 +157,7 @@ esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b) {
         (void)pca9955b_write_rgb(0, 0, 0, pca9955b);
     }
 
-    if(pca9955b->dev_list_idx >= 0 && pca9955b->dev_list_idx < PCA9955B_MAXIMUM_NUMBER) {
+    if(pca9955b->dev_list_idx >= 0 && pca9955b->dev_list_idx < PCA9955B_MAXIMUM_COUNT) {
         if(pca9955b->pca_channel < 5) {
             if(i2c_dev_list[pca9955b->dev_list_idx].used[pca9955b->pca_channel]) {
                 i2c_dev_list[pca9955b->dev_list_idx].used[pca9955b->pca_channel] = false;
@@ -199,7 +199,7 @@ esp_err_t pca9955b_add_i2c_dev_list(pca9955b_handle_t* pca9955b) {
 
     } else {
         int8_t idx = -1;
-        for(int i = 0; i < PCA9955B_MAXIMUM_NUMBER; i++) {
+        for(int i = 0; i < PCA9955B_MAXIMUM_COUNT; i++) {
             if(i2c_dev_list[i].used_count == 0) {
                 idx = i;
                 break;
@@ -229,7 +229,7 @@ esp_err_t i2c_dev_list_add(uint8_t i2c_addr, int8_t i2c_dev_list_idx) {
     esp_err_t ret = ESP_OK;
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
 
-    if(i2c_dev_list_idx < 0 || i2c_dev_list_idx >= PCA9955B_MAXIMUM_NUMBER) {
+    if(i2c_dev_list_idx < 0 || i2c_dev_list_idx >= PCA9955B_MAXIMUM_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -244,7 +244,7 @@ esp_err_t i2c_dev_list_add(uint8_t i2c_addr, int8_t i2c_dev_list_idx) {
     i2c_device_config_t i2c_dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = i2c_addr,
-        .scl_speed_hz = I2C_FREQ,
+        .scl_speed_hz = I2C_SCL_FREQ,
     };
 
     ret = i2c_master_bus_add_device(i2c_bus_handle, &i2c_dev_config, &i2c_dev_list[i2c_dev_list_idx].i2c_dev_handle);
@@ -255,5 +255,6 @@ esp_err_t i2c_dev_list_add(uint8_t i2c_addr, int8_t i2c_dev_list_idx) {
     if(i2c_dev_list[i2c_dev_list_idx].i2c_dev_handle == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
+
     return ESP_OK;
 }

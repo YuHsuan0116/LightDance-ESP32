@@ -1,5 +1,8 @@
-#include "rmt_hal.h"
+#include "inc/ws2812b_hal.h"
 
+/**
+ * @brief Default WS2812B bytes encoder configuration.
+ */
 #define RMT_BYTES_ENCODER_CONFIG_DEFAULT()                                      \
     {                                                                           \
         .bit0 =                                                                 \
@@ -22,8 +25,14 @@
             },                                                                  \
     }
 
+/**
+ * @brief Number of RMT ticks required for the WS2812B reset pulse.
+ */
 #define WS2812B_RESET_TICKS (WS2812B_RESOLUTION / 1000000 * 50 / 2)
 
+/**
+ * @brief Default RMT symbol for the WS2812B reset pulse.
+ */
 #define WS2812B_RESET_CODE_DEFAULT()      \
     ((rmt_symbol_word_t){                 \
         .level0 = 0,                      \
