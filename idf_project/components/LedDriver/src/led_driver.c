@@ -1,4 +1,4 @@
-#include "inc/led_driver.h"
+#include "led_driver.h"
 
 /**
  * @brief buffer for WS2812B RGB data.

@@ -1,4 +1,4 @@
-#include "inc/pca9955b_hal.h"
+#include "pca9955b_hal.h"
 
 static const uint8_t PCA9955B_PWM_addr[5] = {0x88, 0x8B, 0x8E, 0x91, 0x94};
 
@@ -141,6 +141,7 @@ esp_err_t pca9955b_config(led_config_t* led_config, pca9955b_handle_t* pca9955b)
 
     ret = pca9955b_add_i2c_dev_list(pca9955b);
     if(ret != ESP_OK) {
+        (void)pca9955b_del(pca9955b);
         return ret;
     }
 
@@ -148,7 +149,6 @@ esp_err_t pca9955b_config(led_config_t* led_config, pca9955b_handle_t* pca9955b)
 }
 
 esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b) {
-    esp_err_t ret = ESP_OK;
     if(pca9955b == NULL) {
         return ESP_OK;
     }

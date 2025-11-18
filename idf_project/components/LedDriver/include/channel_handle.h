@@ -1,6 +1,6 @@
 #pragma once
 
-#include "def.h"
+#include "config.h"
 #include "pca9955b_hal.h"
 #include "ws2812b_hal.h"
 

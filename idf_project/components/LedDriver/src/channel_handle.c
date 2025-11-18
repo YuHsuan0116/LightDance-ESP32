@@ -1,4 +1,4 @@
-#include "inc/channel_handle.h"
+#include "channel_handle.h"
 
 esp_err_t channel_handle_config(led_config_t* led_config, channel_handle_t* channel_handle) {
     esp_err_t ret = ESP_OK;
@@ -54,16 +54,14 @@ esp_err_t channel_handle_write(color_t* colors, channel_handle_t* channel_handle
 }
 
 esp_err_t channel_handle_del(channel_handle_t* channel_handle) {
-    esp_err_t ret = ESP_OK;
-
     if(channel_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
     if(channel_handle->type == LED_TYPE_OF) {
-        ret = pca9955b_del(&channel_handle->pca9955b);
+        (void)pca9955b_del(&channel_handle->pca9955b);
     } else if(channel_handle->type == LED_TYPE_STRIP) {
-        ret = ws2812b_del(&channel_handle->ws2812b);
+        (void)ws2812b_del(&channel_handle->ws2812b);
     } else {
         return ESP_ERR_NOT_SUPPORTED;
     }

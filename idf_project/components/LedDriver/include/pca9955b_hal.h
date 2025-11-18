@@ -1,8 +1,9 @@
 #pragma once
 
-#include "def.h"
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {

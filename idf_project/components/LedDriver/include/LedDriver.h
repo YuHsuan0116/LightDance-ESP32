@@ -2,6 +2,8 @@
 
 #include "channel_handle.h"
 
+#include "config.h"
+
 /**
  * @brief Maximum number of LED channels supported by the driver.
  */

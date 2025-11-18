@@ -1,4 +1,4 @@
-#include "inc/ws2812b_hal.h"
+#include "ws2812b_hal.h"
 
 /**
  * @brief Default WS2812B bytes encoder configuration.
