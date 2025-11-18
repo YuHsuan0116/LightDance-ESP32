@@ -3,16 +3,17 @@
 #include <freertos/FreeRTOS.h>
 #include "esp_timer.h"
 
-#include "led_driver.h"
+#include "LedDriver.h"
 
+#define N_PCA9955B 2
 #define N_STRIP_CH 8
-#define N_OF_CH 0
+#define N_OF_CH 10
 
 void config_led_driver(LedDriver_handle_t* LedDriver) {
     led_config_t ch_configs[N_STRIP_CH + N_OF_CH];
 
-    uint8_t pca9955b_addresses[1] = {0x5e};
-    uint8_t ws2812b_gpio[8] = {16, 17, 18, 19, 32, 33, 23, 25};
+    uint8_t pca9955b_addresses[N_PCA9955B] = {0x5e, 0x5c};
+    uint8_t ws2812b_gpio[N_STRIP_CH] = {16, 17, 18, 19, 32, 33, 23, 25};
 
     for(int i = 0; i < N_STRIP_CH; i++) {
         ch_configs[i].type = LED_TYPE_STRIP;
