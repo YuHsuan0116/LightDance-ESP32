@@ -144,6 +144,14 @@ esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver) {
         }
     }
 
+    // test for wait all done
+    for(int i = 0; i < LedDriver->channel_number; i++) {
+        if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
+            rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
+            // ESP_LOGI("LED", "channel%d wait all done", i);
+        }
+    }
+
     return last_error;
 }
 
@@ -170,6 +178,15 @@ esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_
             last_error = ret;
         }
     }
+
+    // test for wait all done
+    for(int i = 0; i < LedDriver->channel_number; i++) {
+        if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
+            rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
+            // ESP_LOGI("LED", "channel%d wait all done", i);
+        }
+    }
+
     return last_error;
 }
 

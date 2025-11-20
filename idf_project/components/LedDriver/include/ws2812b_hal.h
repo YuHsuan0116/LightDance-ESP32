@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define RMT_TIMEOUT_MS 10
+#define RMT_TIMEOUT_MS 100
 #define WS2812B_RESOLUTION 10000000
 #define WS2812B_MAXIMUM_LED_COUNT 100
 
