@@ -4,8 +4,9 @@ idf_component_register(
         "src/led_driver.c"
         "src/pca9955b_hal.c"
         "src/ws2812b_hal.c"
+        "LedDriver_example.c"
     INCLUDE_DIRS
         "include"
     REQUIRES
-        driver
+        driver log esp_timer
 )
