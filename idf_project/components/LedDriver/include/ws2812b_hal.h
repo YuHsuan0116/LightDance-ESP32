@@ -12,6 +12,7 @@ extern "C" {
 #define RMT_TIMEOUT_MS 100
 #define WS2812B_RESOLUTION 10000000
 #define WS2812B_MAXIMUM_LED_COUNT 100
+#define WS2812B_MAXIMUM_COUNT 8
 
 /**
  * @brief Configuration for an RMT encoder instance.

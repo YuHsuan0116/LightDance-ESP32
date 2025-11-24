@@ -79,7 +79,7 @@ esp_err_t LedDriver_config(led_config_t* led_configs, int channel_number, LedDri
     for(int i = 0; i < LedDriver->channel_number; i++) {
         ret = channel_handle_config(&led_configs[i], &LedDriver->channel_handle[i]);
         if(ret != ESP_OK) {
-            for(int j = 0; i < j; j++) {
+            for(int j = 0; j < i; j++) {
                 (void)channel_handle_del(&LedDriver->channel_handle[j]);
             }
 
@@ -201,7 +201,7 @@ esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver, bool
         return ESP_ERR_INVALID_STATE;
     }
 
-    ret = LedDriver_set_rgb(color.red, color.green, color.red, LedDriver, wait_done);
+    ret = LedDriver_set_rgb(color.red, color.green, color.blue, LedDriver, wait_done);
     if(ret != ESP_OK) {
         return ret;
     }

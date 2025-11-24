@@ -12,8 +12,6 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define targetFPS 30
-
 typedef enum {
     STATE_NULL = 0,
     STATE_STOPPED,
@@ -40,14 +38,8 @@ typedef struct {
     void* data;
 } event_handle_t;
 
-extern player_state_t transition_table[STATE_COUNT][EVENT_COUNT];
 extern const char* state_name[];
 extern const char* event_name[];
-
-char* fsm_getStateName(player_state_t state);
-char* fsm_getEventName(event_handle_t* event);
-
-bool fsm_checkEventValid(player_state_t state, event_handle_t* event);
 
 #ifdef __cplusplus
 }
