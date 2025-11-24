@@ -41,7 +41,6 @@ Player::~Player() {}
 
 esp_err_t Player::init() {
     frame = 0;
-    LedDriver_init(&LedDriver);
 
     event_queue = xQueueCreate(50, sizeof(event_handle_t));
     cur_state = STATE_STOPPED;

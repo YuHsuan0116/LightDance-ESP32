@@ -52,8 +52,6 @@ void Player::onEnterStopped() {
     LedDriver_del(&LedDriver);
     esp_timer_deinit(&esp_timer);
     frame = 0;
-
-    vTaskDelete(NULL);
 }
 
 void Player::onEnterStoppedFromInit() {}
@@ -61,6 +59,7 @@ void Player::onEnterStoppedFromInit() {}
 void Player::onExitStopped() {}
 
 void Player::onEnterReady() {
+    LedDriver_init(&LedDriver);
     config_LedDriver();
     esp_timer_init(&esp_timer);
 
