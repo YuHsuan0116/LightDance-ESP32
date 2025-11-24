@@ -37,7 +37,7 @@ void signal_task(void* pvParameters) {
     vTaskDelete(NULL);
 }
 
-Player player;
+Player player(40);
 
 void app_main(void) {
     player.init();

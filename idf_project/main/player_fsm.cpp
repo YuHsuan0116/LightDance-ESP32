@@ -27,40 +27,7 @@ color_t BLUE = {0, 0, 255};
 
 color_t colors[N_COLOR];
 
-void config_led_driver(LedDriver_handle_t* LedDriver) {
-    for(int i = 0; i < N_STRIP_CH; i++) {
-        ch_configs[i].type = LED_TYPE_STRIP;
-        ch_configs[i].led_count = 100;
-        ch_configs[i].rmt_gpio = ws2812b_gpio[i];
-    }
-
-    for(int i = 0; i < N_OF_CH; i++) {
-        ch_configs[N_STRIP_CH + i].type = LED_TYPE_OF;
-        ch_configs[N_STRIP_CH + i].i2c_addr = pca9955b_addresses[i / 5];
-        ch_configs[N_STRIP_CH + i].pca_channel = i % 5;
-    }
-
-    esp_err_t ret = ESP_OK;
-    ret = LedDriver_config(ch_configs, N_STRIP_CH + N_OF_CH, LedDriver);
-    if(ret != ESP_OK) {
-        ESP_LOGE("player_task", "LedDriver_config failed: %s", esp_err_to_name(ret));
-    }
-
-    for(int i = 0; i < N_STRIP_CH; i++) {
-        cplt_frame[i] = strip_frame[i];
-    }
-    for(int i = 0; i < N_OF_CH; i++) {
-        cplt_frame[N_STRIP_CH + i] = of_frame[i];
-    }
-
-    for(int i = 0; i < N_COLOR; i++) {
-        colors[i].green = (g[i] * MAXIMUM_BRIGHTNESS) / 255;
-        colors[i].red = (r[i] * MAXIMUM_BRIGHTNESS) / 255;
-        colors[i].blue = (b[i] * MAXIMUM_BRIGHTNESS) / 255;
-    }
-}
-
-// ----------------------------------------------------- //
+void config_led_driver(LedDriver_handle_t* LedDriver);
 
 void Player::onExit(player_state_t state) {
     switch(state) {
@@ -111,6 +78,8 @@ void Player::onEnterStopped() {
     LedDriver_del(&LedDriver);
     esp_timer_deinit(&esp_timer);
     frame = 0;
+
+    vTaskDelete(NULL);
 }
 
 void Player::onEnterStoppedFromInit() {
@@ -126,7 +95,7 @@ void Player::onEnterReady() {
 void Player::onExitReady() {}
 
 void Player::onEnterPlaying() {
-    esp_timer_start_periodic(esp_timer, period);
+    esp_timer_start_periodic(esp_timer, 1 * 1000 * 1000 / player_config.fps);
 }
 void Player::onExitPlaying() {
     esp_timer_stop(esp_timer);
@@ -144,5 +113,38 @@ void Player::updateFrame() {
     ret = LedDriver_set_color(colors[frame % N_COLOR], &LedDriver, 1);
     if(ret != ESP_OK) {
         ESP_LOGE("player_task", "LedDriver_set_color failed: %s", esp_err_to_name(ret));
+    }
+}
+
+void config_led_driver(LedDriver_handle_t* LedDriver) {
+    for(int i = 0; i < N_STRIP_CH; i++) {
+        ch_configs[i].type = LED_TYPE_STRIP;
+        ch_configs[i].led_count = 100;
+        ch_configs[i].rmt_gpio = ws2812b_gpio[i];
+    }
+
+    for(int i = 0; i < N_OF_CH; i++) {
+        ch_configs[N_STRIP_CH + i].type = LED_TYPE_OF;
+        ch_configs[N_STRIP_CH + i].i2c_addr = pca9955b_addresses[i / 5];
+        ch_configs[N_STRIP_CH + i].pca_channel = i % 5;
+    }
+
+    esp_err_t ret = ESP_OK;
+    ret = LedDriver_config(ch_configs, N_STRIP_CH + N_OF_CH, LedDriver);
+    if(ret != ESP_OK) {
+        ESP_LOGE("player_task", "LedDriver_config failed: %s", esp_err_to_name(ret));
+    }
+
+    for(int i = 0; i < N_STRIP_CH; i++) {
+        cplt_frame[i] = strip_frame[i];
+    }
+    for(int i = 0; i < N_OF_CH; i++) {
+        cplt_frame[N_STRIP_CH + i] = of_frame[i];
+    }
+
+    for(int i = 0; i < N_COLOR; i++) {
+        colors[i].green = (g[i] * MAXIMUM_BRIGHTNESS) / 255;
+        colors[i].red = (r[i] * MAXIMUM_BRIGHTNESS) / 255;
+        colors[i].blue = (b[i] * MAXIMUM_BRIGHTNESS) / 255;
     }
 }

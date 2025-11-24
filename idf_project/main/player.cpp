@@ -12,6 +12,8 @@ void player_task(void* pvParameters) {
             player->handleEvent(&event);
         }
     }
+
+    ESP_LOGI("player_task", "terminated!");
     vTaskDelete(NULL);
 }
 
@@ -19,8 +21,9 @@ esp_err_t player_sendEvent(Player* player, event_handle_t* event) {
     return player->sendEvent(event);
 }
 
-Player::Player() {
+Player::Player(int fps) {
     transition_table_config();
+    player_config.fps = fps;
 }
 
 Player::~Player() {}
@@ -71,13 +74,13 @@ void Player::handleStateTransition(event_handle_t* event) {
         return;
     }
 
-    onExit(cur_state);
     ESP_LOGI("player_task", "exit %s!", state_name[cur_state]);
+    onExit(cur_state);
 
     cur_state = next_state;
 
-    onEnter(cur_state);
     ESP_LOGI("player_task", "enter %s!", state_name[cur_state]);
+    onEnter(cur_state);
 }
 
 void Player::esp_timer_init(esp_timer_handle_t* esp_timer) {

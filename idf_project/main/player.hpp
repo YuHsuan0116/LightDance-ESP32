@@ -10,9 +10,13 @@
 
 #define period 100000
 
+typedef struct {
+    int fps;
+} player_config_t;
+
 class Player {
   public:
-    Player();
+    Player(int fps);
     ~Player();
 
     esp_err_t init();
@@ -28,6 +32,7 @@ class Player {
     esp_timer_handle_t esp_timer;
     event_handle_t event;
     QueueHandle_t event_queue;
+    player_config_t player_config;
 
     void handleStateTransition(event_handle_t* event);
     void onEnter(player_state_t state);
