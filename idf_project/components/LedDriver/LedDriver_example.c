@@ -54,7 +54,7 @@ void test(void) {
         }
 
         start_time = esp_timer_get_time();
-        LedDriver_write(cplt_frame, &LedDriver);
+        LedDriver_write(cplt_frame, &LedDriver, 1);
         end_time = esp_timer_get_time();
         ESP_LOGI("main", "%lld us", end_time - start_time);
 

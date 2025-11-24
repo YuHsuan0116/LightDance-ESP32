@@ -102,6 +102,7 @@ esp_err_t LedDriver_del(LedDriver_handle_t* LedDriver);
  *
  * @param[in]  colors     Array of color buffers, one per channel.
  * @param[in]  LedDriver  LED driver handle.
+ * @param[in]  wait_done  whether need to wait done
  *
  * @return
  *      - ESP_OK: All writes succeeded or no errors occurred.
@@ -109,7 +110,7 @@ esp_err_t LedDriver_del(LedDriver_handle_t* LedDriver);
  *      - ESP_ERR_INVALID_STATE: Driver not initialized.
  *      - Others: Last error returned by channel_handle_write().
  */
-esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver);
+esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver, bool wait_done);
 
 /**
  * @brief Set all channels to the same RGB value.
@@ -118,6 +119,7 @@ esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver);
  * @param[in]  green          Green component (0–255).
  * @param[in]  blue          Blue  component (0–255).
  * @param[in]  LedDriver  LED driver handle.
+ * @param[in]  wait_done  whether need to wait done
  *
  * @return
  *      - ESP_OK: Operation completed successfully.
@@ -125,13 +127,14 @@ esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver);
  *      - ESP_ERR_INVALID_STATE: Driver not initialized.
  *      - Others: Last error returned by channel_handle_write().
  */
-esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_handle_t* LedDriver);
+esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_handle_t* LedDriver, bool wait_done);
 
 /**
  * @brief Set all channels to a single color value.
  *
  * @param[in]  color      Color value to apply.
  * @param[in]  LedDriver  LED driver handle.
+ * @param[in]  wait_done  whether need to wait done
  *
  * @return
  *      - ESP_OK: Operation completed successfully.
@@ -139,8 +142,11 @@ esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_
  *      - ESP_ERR_INVALID_STATE: Driver not initialized.
  *      - Others: Errors returned by LedDriver_set_rgb().
  */
-esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver);
+esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver, bool wait_done);
 
+esp_err_t LedDriver_blackout(LedDriver_handle_t* LedDriver);
+
+esp_err_t LedDriver_parttest(int channel_idx, int red, int green, int blue, LedDriver_handle_t* LedDriver);
 #ifdef __cplusplus
 }
 #endif

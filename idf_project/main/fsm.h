@@ -1,5 +1,10 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
 #include <string.h>
 
 #include "esp_err.h"
@@ -10,36 +15,40 @@
 #define targetFPS 30
 
 typedef enum {
-    STATE_NULL,
+    STATE_NULL = 0,
     STATE_STOPPED,
     STATE_READY,
     STATE_PLAYING,
     STATE_PAUSED,
     STATE_PART_TEST,
     STATE_COUNT,
-} state_t;
+} player_state_t;
 
 typedef enum {
-    EVENT_STOP,
+    EVENT_STOP = 0,
     EVENT_PAUSE,
     EVENT_PLAY,
     EVENT_START,
     EVENT_PART_TEST,
     EVENT_UPDATE_FRAME,
     EVENT_COUNT,
-} event_t;
+} event_type_t;
 
 typedef struct {
-    state_t state;
-    QueueHandle_t event_queue;
-} fsm_handle_t;
+    event_type_t type;
+    uint64_t master_timer;
+    void* data;
+} event_handle_t;
 
-char* fsm_getStateName(state_t state);
-char* fsm_getEventName(event_t event);
+extern player_state_t transition_table[STATE_COUNT][EVENT_COUNT];
+extern const char* state_name[];
+extern const char* event_name[];
 
-void transition_table_config();
-esp_err_t fsm_init(fsm_handle_t* fsm);
+char* fsm_getStateName(player_state_t state);
+char* fsm_getEventName(event_handle_t* event);
 
-esp_err_t fsm_transit(event_t event, fsm_handle_t* fsm);
-esp_err_t fsm_exitState(state_t state);
-esp_err_t fsm_enterState(state_t state);
+bool fsm_checkEventValid(player_state_t state, event_handle_t* event);
+
+#ifdef __cplusplus
+}
+#endif

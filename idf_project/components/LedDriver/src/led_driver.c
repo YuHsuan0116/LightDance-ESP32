@@ -119,7 +119,7 @@ esp_err_t LedDriver_del(LedDriver_handle_t* LedDriver) {
     return last_error;
 }
 
-esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver) {
+esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver, bool wait_done) {
     esp_err_t ret = ESP_OK;
     esp_err_t last_error = ESP_OK;
 
@@ -145,17 +145,18 @@ esp_err_t LedDriver_write(color_t** colors, LedDriver_handle_t* LedDriver) {
     }
 
     // test for wait all done
-    for(int i = 0; i < LedDriver->channel_number; i++) {
-        if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
-            rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
-            // ESP_LOGI("LED", "channel%d wait all done", i);
+    if(wait_done) {
+        for(int i = 0; i < LedDriver->channel_number; i++) {
+            if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
+                rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
+            }
         }
     }
 
     return last_error;
 }
 
-esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_handle_t* LedDriver) {
+esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_handle_t* LedDriver, bool wait_done) {
     esp_err_t ret = ESP_OK;
     esp_err_t last_error = ESP_OK;
 
@@ -180,17 +181,18 @@ esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_
     }
 
     // test for wait all done
-    for(int i = 0; i < LedDriver->channel_number; i++) {
-        if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
-            rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
-            // ESP_LOGI("LED", "channel%d wait all done", i);
+    if(wait_done) {
+        for(int i = 0; i < LedDriver->channel_number; i++) {
+            if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
+                rmt_tx_wait_all_done(LedDriver->channel_handle[i].ws2812b.rmt_channel, RMT_TIMEOUT_MS);
+            }
         }
     }
 
     return last_error;
 }
 
-esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver) {
+esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver, bool wait_done) {
     esp_err_t ret = ESP_OK;
 
     if(LedDriver == NULL) {
@@ -200,7 +202,49 @@ esp_err_t LedDriver_set_color(color_t color, LedDriver_handle_t* LedDriver) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    ret = LedDriver_set_rgb(color.red, color.green, color.red, LedDriver);
+    ret = LedDriver_set_rgb(color.red, color.green, color.red, LedDriver, wait_done);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t LedDriver_blackout(LedDriver_handle_t* LedDriver) {
+    esp_err_t ret = ESP_OK;
+
+    if(LedDriver == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!LedDriver->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ret = LedDriver_set_rgb(0, 0, 0, LedDriver, 1);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t LedDriver_parttest(int channel_idx, int red, int green, int blue, LedDriver_handle_t* LedDriver) {
+    esp_err_t ret = ESP_OK;
+
+    if(LedDriver == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!LedDriver->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    for(int i = 0; i < WS2812B_MAXIMUM_LED_COUNT; i++) {
+        cmd[3 * i] = green;
+        cmd[3 * i + 1] = red;
+        cmd[3 * i + 2] = blue;
+    }
+
+    ret = channel_handle_write((color_t*)cmd, &(LedDriver->channel_handle[channel_idx]));
     if(ret != ESP_OK) {
         return ret;
     }
