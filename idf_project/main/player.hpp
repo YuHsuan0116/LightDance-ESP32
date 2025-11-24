@@ -8,7 +8,7 @@
 #include "LedDriver.h"
 #include "fsm.h"
 
-#define period 500000
+#define period 100000
 
 class Player {
   public:

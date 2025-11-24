@@ -40,7 +40,11 @@ void config_led_driver(LedDriver_handle_t* LedDriver) {
         ch_configs[N_STRIP_CH + i].pca_channel = i % 5;
     }
 
-    LedDriver_config(ch_configs, N_STRIP_CH + N_OF_CH, LedDriver);
+    esp_err_t ret = ESP_OK;
+    ret = LedDriver_config(ch_configs, N_STRIP_CH + N_OF_CH, LedDriver);
+    if(ret != ESP_OK) {
+        ESP_LOGE("player_task", "LedDriver_config failed: %s", esp_err_to_name(ret));
+    }
 
     for(int i = 0; i < N_STRIP_CH; i++) {
         cplt_frame[i] = strip_frame[i];
@@ -135,6 +139,10 @@ void Player::onEnterPartTest() {}
 void Player::onExitPartTest() {}
 
 void Player::updateFrame() {
+    esp_err_t ret = ESP_OK;
     ESP_LOGI("player_task", "update frame! Playing frame: %d", frame);
-    LedDriver_set_color(colors[frame % N_COLOR], &LedDriver, 1);
+    ret = LedDriver_set_color(colors[frame % N_COLOR], &LedDriver, 1);
+    if(ret != ESP_OK) {
+        ESP_LOGE("player_task", "LedDriver_set_color failed: %s", esp_err_to_name(ret));
+    }
 }

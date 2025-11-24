@@ -29,6 +29,9 @@ esp_err_t Player::init() {
     frame = 0;
     event_queue = xQueueCreate(50, sizeof(event_handle_t));
     cur_state = STATE_STOPPED;
+
+    LedDriver_init(&LedDriver);
+
     onEnterStoppedFromInit();
     return ESP_OK;
 }
@@ -40,7 +43,10 @@ esp_err_t Player::sendEvent(event_handle_t* event) {
 
 esp_err_t Player::handleEvent(event_handle_t* event) {
     if(cur_state == STATE_PLAYING && event->type == EVENT_UPDATE_FRAME) {
+        uint64_t start_time = esp_timer_get_time();
         updateFrame();
+        uint64_t end_time = esp_timer_get_time();
+        ESP_LOGI("player_task", "update Frame %d takes %llu us", frame, end_time - start_time);
         frame++;
         return ESP_OK;
     } else {

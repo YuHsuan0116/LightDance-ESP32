@@ -180,7 +180,6 @@ esp_err_t LedDriver_set_rgb(uint8_t red, uint8_t green, uint8_t blue, LedDriver_
         }
     }
 
-    // test for wait all done
     if(wait_done) {
         for(int i = 0; i < LedDriver->channel_number; i++) {
             if(LedDriver->channel_handle[i].type == LED_TYPE_STRIP) {
