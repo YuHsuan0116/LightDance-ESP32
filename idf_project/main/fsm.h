@@ -29,6 +29,7 @@ typedef enum {
     EVENT_START,
     EVENT_PART_TEST,
     EVENT_UPDATE_FRAME,
+    EVENT_DELETE,
     EVENT_COUNT,
 } event_type_t;
 

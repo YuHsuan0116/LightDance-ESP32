@@ -139,21 +139,18 @@ void Player::config_LedDriver() {
         ch_configs[i].rmt_gpio = player_config.ws2812b_gpio[i];
     }
 
-    for(int i = 0; i < player_config.pca9955b_count; i++) {
+    for(int i = 0; i < player_config.pca9955b_ch_count; i++) {
         ch_configs[player_config.ws2812b_count + i].type = LED_TYPE_OF;
         ch_configs[player_config.ws2812b_count + i].i2c_addr = player_config.pca9955b_addresses[i / 5];
         ch_configs[player_config.ws2812b_count + i].pca_channel = i % 5;
     }
 
-    esp_err_t ret = LedDriver_config(ch_configs, player_config.ws2812b_count + player_config.pca9955b_count, &LedDriver);
-    if(ret != ESP_OK) {
-        ESP_LOGE("player_task", "LedDriver_config failed!");
-    }
+    ESP_ERROR_CHECK(LedDriver_config(ch_configs, player_config.ws2812b_count + player_config.pca9955b_ch_count, &LedDriver));
 
     for(int i = 0; i < player_config.ws2812b_count; i++) {
         cplt_frame[i] = strip_frame[i];
     }
-    for(int i = 0; i < player_config.pca9955b_count; i++) {
+    for(int i = 0; i < player_config.pca9955b_ch_count; i++) {
         cplt_frame[player_config.ws2812b_count + i] = of_frame[i];
     }
 
@@ -167,7 +164,11 @@ void Player::config_LedDriver() {
 void Player::updateFrame() {
     esp_err_t ret = ESP_OK;
     ESP_LOGI("player_task", "update frame! Playing frame: %d", frame);
-    ret = LedDriver_set_color(rainbow[frame % N_COLOR], &LedDriver, player_config.wait_done);
+    ret = LedDriver_set_rgb(rainbow[frame % N_COLOR].red * player_config.maximum_brightness / 255,
+                            rainbow[frame % N_COLOR].green * player_config.maximum_brightness / 255,
+                            rainbow[frame % N_COLOR].blue * player_config.maximum_brightness / 255,
+                            &LedDriver,
+                            player_config.wait_done);
     if(ret != ESP_OK) {
         ESP_LOGE("player_task", "LedDriver_set_color failed!");
     }
@@ -185,15 +186,22 @@ esp_err_t Player::create_task() {
 void Player::taskEntry(void* pvParameters) {
     Player* player = (Player*)pvParameters;
     player->taskLoop();
+
+    ESP_LOGI("player_task", "task delete!");
     vTaskDelete(NULL);
 }
 
 void Player::taskLoop() {
     while(1) {
         if(xQueueReceive(event_queue, &event, 100)) {
+            if(event.type == EVENT_DELETE) {
+                break;
+            }
             handleEvent(&event);
         }
     }
+    LedDriver_del(&LedDriver);
+    esp_timer_deinit(&esp_timer);
 }
 
 esp_err_t Player::queueEvent(const event_handle_t* event) {

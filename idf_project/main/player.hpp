@@ -11,10 +11,13 @@
 typedef struct {
     int fps;
     bool wait_done;
+    uint8_t maximum_brightness;
 
     uint8_t ws2812b_count;
-    uint8_t pca9955b_count;
     uint8_t ws2812b_gpio[WS2812B_MAXIMUM_COUNT];
+
+    uint8_t pca9955b_count;
+    uint8_t pca9955b_ch_count;
     uint8_t pca9955b_addresses[PCA9955B_MAXIMUM_COUNT];
 
 } player_config_t;
@@ -41,7 +44,7 @@ class Player {
     int frame;
     color_t strip_frame[WS2812B_MAXIMUM_COUNT][WS2812B_MAXIMUM_LED_COUNT];
     color_t of_frame[PCA9955B_MAXIMUM_COUNT][1];
-    color_t* cplt_frame[WS2812B_MAXIMUM_COUNT + PCA9955B_MAXIMUM_COUNT];
+    color_t* cplt_frame[WS2812B_MAXIMUM_COUNT + 5 * PCA9955B_MAXIMUM_COUNT];
     void config_LedDriver();
     void updateFrame();
 

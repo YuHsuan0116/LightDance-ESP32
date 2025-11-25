@@ -59,8 +59,9 @@ void Player::onEnterStoppedFromInit() {}
 void Player::onExitStopped() {}
 
 void Player::onEnterReady() {
-    LedDriver_init(&LedDriver);
+    ESP_ERROR_CHECK(LedDriver_init(&LedDriver));
     config_LedDriver();
+
     esp_timer_init(&esp_timer);
 
     LedDriver_blackout(&LedDriver);
