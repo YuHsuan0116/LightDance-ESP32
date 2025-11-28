@@ -15,24 +15,6 @@ extern "C" {
 #define WS2812B_MAXIMUM_COUNT 8
 
 /**
- * @brief Configuration for an RMT encoder instance.
- */
-typedef struct {
-    uint32_t resolution; /*!< Encoder resolution in Hz */
-} rmt_encoder_config_t;
-
-/**
- * @brief Composite RMT encoder instance.
- */
-typedef struct {
-    rmt_encoder_t base;           /*!< Base encoder interface */
-    rmt_encoder_t* bytes_encoder; /*!< Underlying bytes encoder */
-    rmt_encoder_t* copy_encoder;  /*!< Underlying copy encoder */
-    int state;                    /*!< Internal state machine value */
-    rmt_symbol_word_t reset_code; /*!< Reset symbol used by the encoder */
-} encoder_t;
-
-/**
  * @brief Handle for a WS2812B LED controller.
  */
 typedef struct {
@@ -41,41 +23,6 @@ typedef struct {
     rmt_channel_handle_t rmt_channel; /*!< RMT channel handle */
     rmt_encoder_handle_t rmt_encoder; /*!< RMT encoder handle */
 } ws2812b_handle_t;
-
-/**
- * @brief WS2812B composite encoder callback.
- *
- * @param[in]  rmt_encoder    Encoder instance.
- * @param[in]  rmt_channel    RMT channel used for transmission.
- * @param[in]  buffer         RGB data buffer.
- * @param[in]  buffer_size    Size of the RGB buffer in bytes.
- * @param[out] ret_state      Returned encoding state.
- *
- * @return Number of RMT symbols encoded.
- */
-size_t encode(rmt_encoder_t* rmt_encoder, rmt_channel_handle_t rmt_channel, const void* buffer, size_t buffer_size, rmt_encode_state_t* ret_state);
-
-/**
- * @brief Delete a WS2812B composite encoder.
- *
- * @param[in] rmt_encoder  Pointer to the composite encoder's base interface.
- *
- * @return
- *      - ESP_OK: Encoder deleted successfully.
- *      - ESP_ERR_INVALID_ARG: Null encoder pointer.
- *      - Other: Last non-OK error returned by rmt_del_encoder().
- */
-esp_err_t del_encoder(rmt_encoder_t* rmt_encoder);
-
-/**
- * @brief Reset the WS2812B composite encoder.
- *
- * @param[in] rmt_encoder  Base encoder pointer.
- *
- * @return
- *      - ESP_OK: Reset completed successfully.
- */
-esp_err_t encoder_reset(rmt_encoder_t* rmt_encoder);
 
 /**
  * @brief Create a new WS2812B composite RMT encoder.
@@ -102,6 +49,8 @@ esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder);
  *      - Others: Errors returned by rmt_new_tx_channel() or rmt_enable().
  */
 esp_err_t ws2812b_new_channel(gpio_num_t rmt_gpio, rmt_channel_handle_t* ret_channel);
+
+esp_err_t ws2812b_enable(ws2812b_handle_t* ws2812b);
 
 /**
  * @brief Configure a WS2812B LED strip handle.

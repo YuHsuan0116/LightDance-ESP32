@@ -1,8 +1,7 @@
-#include "ws2812b_hal.h"
+#include "ws2812b_encoder.h"
 
-/**
- * @brief Default WS2812B bytes encoder configuration.
- */
+#include "esp_attr.h"
+
 #define RMT_BYTES_ENCODER_CONFIG_DEFAULT()                                      \
     {                                                                           \
         .bit0 =                                                                 \
@@ -25,14 +24,8 @@
             },                                                                  \
     }
 
-/**
- * @brief Number of RMT ticks required for the WS2812B reset pulse.
- */
 #define WS2812B_RESET_TICKS (WS2812B_RESOLUTION / 1000000 * 50 / 2)
 
-/**
- * @brief Default RMT symbol for the WS2812B reset pulse.
- */
 #define WS2812B_RESET_CODE_DEFAULT()      \
     ((rmt_symbol_word_t){                 \
         .level0 = 0,                      \
@@ -41,16 +34,16 @@
         .duration1 = WS2812B_RESET_TICKS, \
     })
 
-static rmt_transmit_config_t rmt_tx_config = {
-    .loop_count = 0,
-    .flags =
-        {
-            .eot_level = 0,
-            .queue_nonblocking = false,
-        },
-};
+typedef struct {
+    rmt_encoder_t base;
+    rmt_encoder_t* bytes_encoder;
+    rmt_encoder_t* copy_encoder;
+    int state;
+    rmt_symbol_word_t reset_code;
+} encoder_t;
 
-size_t encode(rmt_encoder_t* rmt_encoder, rmt_channel_handle_t rmt_channel, const void* buffer, size_t buffer_size, rmt_encode_state_t* ret_state) {
+static IRAM_ATTR size_t
+encode(rmt_encoder_t* rmt_encoder, rmt_channel_handle_t rmt_channel, const void* buffer, size_t buffer_size, rmt_encode_state_t* ret_state) {
     encoder_t* ws2812b_encoder = __containerof(rmt_encoder, encoder_t, base);
     rmt_encoder_handle_t bytes_encoder = ws2812b_encoder->bytes_encoder;
     rmt_encoder_handle_t copy_encoder = ws2812b_encoder->copy_encoder;
@@ -120,7 +113,7 @@ esp_err_t encoder_reset(rmt_encoder_t* rmt_encoder) {
     return ESP_OK;
 }
 
-esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
+esp_err_t rmt_new_encoder(rmt_encoder_handle_t* ret_encoder) {
     esp_err_t ret = ESP_OK;
     if(ret_encoder == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -128,7 +121,7 @@ esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
 
     *ret_encoder = NULL;
 
-    encoder_t* ws2812b_encoder = (encoder_t*)rmt_alloc_encoder_mem(sizeof(encoder_t));
+    encoder_t* ws2812b_encoder = (encoder_t*)calloc(1, sizeof(encoder_t));
     if(!ws2812b_encoder) {
         return ESP_ERR_NO_MEM;
     }
@@ -159,135 +152,4 @@ esp_err_t ws2812b_new_encoder(rmt_encoder_handle_t* ret_encoder) {
 
     *ret_encoder = &ws2812b_encoder->base;
     return ESP_OK;
-}
-
-esp_err_t ws2812b_new_channel(gpio_num_t rmt_gpio, rmt_channel_handle_t* ret_channel) {
-    esp_err_t ret = ESP_OK;
-
-    if(ret_channel == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    *ret_channel = NULL;
-
-    rmt_tx_channel_config_t rmt_tx_channel_config = {
-        .gpio_num = rmt_gpio,
-        .clk_src = RMT_CLK_SRC_DEFAULT,
-        .resolution_hz = WS2812B_RESOLUTION,
-        .mem_block_symbols = 64,
-        .trans_queue_depth = 1,
-    };
-
-    ret = rmt_new_tx_channel(&rmt_tx_channel_config, ret_channel);
-    if(ret != ESP_OK) {
-        return ret;
-    }
-
-    ret = rmt_enable((*ret_channel));
-    if(ret != ESP_OK) {
-        rmt_del_channel(*ret_channel);
-        *ret_channel = NULL;
-        return ret;
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t ws2812b_config(led_config_t* led_config, ws2812b_handle_t* ws2812b) {
-    esp_err_t ret = ESP_OK;
-
-    if(led_config == NULL || ws2812b == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if(led_config->led_count == 0 || led_config->led_count > WS2812B_MAXIMUM_LED_COUNT) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    ws2812b->led_count = led_config->led_count;
-    ws2812b->initialized = false;
-
-    ret = ws2812b_new_channel(led_config->rmt_gpio, &ws2812b->rmt_channel);
-    if(ret != ESP_OK) {
-        return ret;
-    }
-
-    ret = ws2812b_new_encoder(&ws2812b->rmt_encoder);
-    if(ret != ESP_OK) {
-        (void)rmt_disable(ws2812b->rmt_channel);
-        (void)rmt_del_channel(ws2812b->rmt_channel);
-        ws2812b->rmt_channel = NULL;
-        return ret;
-    }
-
-    ws2812b->initialized = true;
-    return ESP_OK;
-}
-
-esp_err_t ws2812b_write(const uint8_t* buffer, const size_t buffer_size, ws2812b_handle_t* ws2812b) {
-    esp_err_t ret = ESP_OK;
-
-    if(buffer == NULL || ws2812b == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if(!ws2812b->initialized) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    if(ws2812b->rmt_channel == NULL || ws2812b->rmt_encoder == NULL) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    ret = rmt_transmit(ws2812b->rmt_channel, ws2812b->rmt_encoder, buffer, buffer_size, &rmt_tx_config);
-    if(ret != ESP_OK) {
-        return ret;
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
-    esp_err_t ret = ESP_OK;
-    esp_err_t last_error = ESP_OK;
-
-    if(ws2812b == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if(!ws2812b->initialized) {
-        return ESP_OK;
-    }
-
-    if(ws2812b->rmt_channel) {
-        ret = rmt_tx_wait_all_done(ws2812b->rmt_channel, RMT_TIMEOUT_MS);
-        if(ret != ESP_OK) {
-            last_error = ret;
-        }
-    }
-
-    if(ws2812b->rmt_encoder) {
-        if(ws2812b->rmt_encoder->del) {
-            ret = ws2812b->rmt_encoder->del(ws2812b->rmt_encoder);
-            if(ret != ESP_OK) {
-                last_error = ret;
-            }
-        }
-        ws2812b->rmt_encoder = NULL;
-    }
-
-    if(ws2812b->rmt_channel) {
-        ret = rmt_disable(ws2812b->rmt_channel);
-        if(ret != ESP_OK) {
-            last_error = ret;
-        }
-
-        ret = rmt_del_channel(ws2812b->rmt_channel);
-        if(ret != ESP_OK) {
-            last_error = ret;
-        }
-
-        ws2812b->rmt_channel = NULL;
-    }
-
-    ws2812b->initialized = false;
-    ws2812b->led_count = 0;
-
-    return last_error;
 }

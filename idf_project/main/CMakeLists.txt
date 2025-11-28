@@ -1,4 +1,4 @@
-idf_component_register(SRCS "player.cpp" "main.cpp" "fsm.c" "player_fsm.cpp"
+idf_component_register(SRCS "main.c" "LedDriver/pca9955b_hal.c" "LedDriver/ws2812b_hal.c" "LedDriver/ws2812b_encoder.c"
                     INCLUDE_DIRS "."
-                    REQUIRES LedDriver esp_timer esp_driver_gptimer vfs sdmmc fatfs
+                    REQUIRES  esp_timer driver
                     )
