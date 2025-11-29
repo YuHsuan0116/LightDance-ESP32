@@ -12,8 +12,8 @@ static esp_err_t ws2812b_init_channel(gpio_num_t gpio_num, uint16_t pixel_num, r
         .gpio_num = gpio_num,
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = WS2812B_RESOLUTION,
-        .mem_block_symbols = 64,
-        .trans_queue_depth = 4,
+        .mem_block_symbols = 512 / RMT_MAX_CH_NUM,
+        .trans_queue_depth = 8,
     };
 
     return rmt_new_tx_channel(&rmt_tx_channel_config, channel);
@@ -155,28 +155,30 @@ void ws2812b_test() {
     uint8_t g[3] = {0, 255, 0};
     uint8_t b[3] = {0, 0, 255};
 
+    int test_case = 5;
+
     for(int i = 0; i < 100; i++) {
-        for(int idx = 0; idx < 8; idx++) {
+        for(int idx = 0; idx < test_case; idx++) {
             ws2812b_fill(ws2812b[idx], r[i % 3], g[i % 3], b[i % 3]);
         }
 
         uint64_t start_time = esp_timer_get_time();
-        for(int idx = 0; idx < 8; idx++) {
+        for(int idx = 0; idx < test_case; idx++) {
             ws2812b_show(ws2812b[idx]);
         }
         uint64_t end_time1 = esp_timer_get_time();
 
-        for(int idx = 0; idx < 8; idx++) {
+        for(int idx = 0; idx < test_case; idx++) {
             ws2812b_wait_done(ws2812b[idx]);
         }
         uint64_t end_time2 = esp_timer_get_time();
 
         ESP_LOGI("ws2812b_test", "show: %lld us, wait_done: %lld us", end_time1 - start_time, end_time2 - start_time);
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 
-    for(int idx = 0; idx < 8; idx++) {
+    for(int idx = 0; idx < test_case; idx++) {
         ws2812b_del(&ws2812b[idx]);
     }
 }

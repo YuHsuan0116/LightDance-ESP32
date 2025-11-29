@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c" "LedDriver/pca9955b_hal.c" "LedDriver/ws2812b_hal.c" "LedDriver/ws2812b_encoder.c"
+idf_component_register(SRCS "main.cpp" 
                     INCLUDE_DIRS "."
-                    REQUIRES  esp_timer driver
+                    REQUIRES  esp_timer driver LedController
                     )

@@ -187,7 +187,7 @@ void pca9955b_test() {
         }
 
         uint64_t start_time = esp_timer_get_time();
-        for(int j = 0; j < 4; j++) {
+        for(int j = 0; j < 1; j++) {
             for(int idx = 0; idx < 2; idx++) {
                 pca9955b_show(pca9955b[idx]);
             }
