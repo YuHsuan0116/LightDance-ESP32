@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-#define I2C_FREQ 800000
-#define I2C_TIMEOUT_MS 10
+#define I2C_FREQ 400000
+#define I2C_TIMEOUT_MS 20
 
 typedef struct {
     i2c_master_dev_handle_t i2c_dev_handle;

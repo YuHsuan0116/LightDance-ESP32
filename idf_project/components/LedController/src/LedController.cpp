@@ -64,7 +64,7 @@ esp_err_t LedController::init() {
                 }
             }
             if(pca9955b_idx != -1) {
-                ch[idx].buffer = pca9955b_devs[pca9955b_idx]->buffer + 3 * ch_configs[i].pca_ch;
+                ch[idx].buffer = pca9955b_devs[pca9955b_idx]->buffer + 1 + 3 * ch_configs[i].pca_ch;
                 ch[idx].buffer_size = 3;
             }
         }
@@ -167,5 +167,20 @@ esp_err_t LedController::fill(uint8_t red, uint8_t green, uint8_t blue) {
         pca9955b_fill(pca9955b_devs[i], red, green, blue);
     }
 
+    return ESP_OK;
+}
+
+esp_err_t LedController::ch_write_buffer(int idx, uint8_t* buffer) {
+    memcpy(ch[idx].buffer, buffer, ch[idx].buffer_size);
+    return ESP_OK;
+}
+
+esp_err_t LedController::clear_buffer() {
+    for(int i = 0; i < ws2812b_num; i++) {
+        memset(ws2812b_devs[i]->buffer, 0, ws2812b_devs[i]->buffer_size);
+    }
+    for(int i = 0; i < pca9955b_num; i++) {
+        memset(pca9955b_devs[i]->buffer + 1, 0, 15);
+    }
     return ESP_OK;
 }

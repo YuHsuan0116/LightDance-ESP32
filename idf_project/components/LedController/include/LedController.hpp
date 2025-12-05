@@ -52,7 +52,10 @@ class LedController {
     esp_err_t del();
 
     esp_err_t load_config_test();
+    esp_err_t ch_write_buffer(int, uint8_t*);
     esp_err_t fill(uint8_t, uint8_t, uint8_t);
+    esp_err_t clear_buffer();
+    esp_err_t black_out();
 
   private:
     uint8_t hw_num;
