@@ -151,11 +151,11 @@ void ws2812b_test() {
         ws2812b_init(gpio[idx], 100, &ws2812b[idx]);
     }
 
-    uint8_t r[3] = {255, 0, 0};
-    uint8_t g[3] = {0, 255, 0};
-    uint8_t b[3] = {0, 0, 255};
+    uint8_t r[3] = {15, 0, 0};
+    uint8_t g[3] = {0, 15, 0};
+    uint8_t b[3] = {0, 0, 15};
 
-    int test_case = 5;
+    int test_case = 8;
 
     for(int i = 0; i < 100; i++) {
         for(int idx = 0; idx < test_case; idx++) {

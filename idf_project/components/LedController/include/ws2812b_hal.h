@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define RMT_MAX_CH_NUM 4
+#define RMT_MAX_CH_NUM 8
 #define RMT_TIMEOUT_MS 20
 
 typedef struct {

@@ -1,38 +1,59 @@
-#include <stdlib.h>
-#include <time.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include "player.h"
 
-#include "esp_log.h"
-#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-#include "LedController.hpp"
-
-#define WS2812B_NUM 4
-#define PCA9955B_NUM 2
 
 extern "C" void app_main();
 
-uint8_t red[4] = {255, 0, 0, 255};
-uint8_t green[4] = {0, 255, 0, 255};
-uint8_t blue[4] = {0, 0, 255, 255};
-
-void test1();
-
 void app_main() {
-    LedController controller;
-
-    controller.load_config_test();
-    controller.init();
-
+    Player& player = Player::getInstance();
+    player.init();
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    for(int i = 0; i < 100; i++) {
-        controller.fill(red[i % 4], green[i % 4], blue[i % 4]);
-        controller.show();
+    fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+    printf("CMD: 0=Play, 1=Pause, 2=Test, 3=Reset, 4=Kill\n");
+
+    while(1) {
+        int c = getchar();
+
+        if(c != EOF && c != '\n') {
+
+            Event event;
+            bool valid = true;
+
+            switch(c) {
+                case '0':
+                    event.type = EVENT_PLAY;
+                    break;
+                case '1':
+                    event.type = EVENT_PAUSE;
+                    break;
+                case '2':
+                    event.type = EVENT_TEST;
+                    break;
+                case '3':
+                    event.type = EVENT_RESET;
+                    break;
+                case '4':
+                    event.type = EVENT_KILL;
+                    break;
+                default:
+                    valid = false;
+                    break;
+            }
+
+            if(valid) {
+                printf("Sent CMD: %c\n", (char)c);
+                xQueueSend(player.eventQueue, &event, 1000);
+            }
+        }
+
+        if(c == '4') {
+            break;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-
-    controller.del();
 }
