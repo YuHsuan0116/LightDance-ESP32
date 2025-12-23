@@ -166,15 +166,15 @@ void pca9955b_test() {
     i2c_master_bus_handle_t bus_handle;
     i2c_bus_init(21, 22, &bus_handle);
 
-    pca9955b_handle_t pca9955b[2];
-    uint8_t i2c_addr[2] = {0x5c, 0x5e};
+    pca9955b_handle_t pca9955b[6];
+    uint8_t i2c_addr[6] = {0x1f, 0x20, 0x22, 0x23, 0x5b, 0x5c};
 
     uint8_t r[3] = {255, 0, 0};
     uint8_t g[3] = {0, 255, 0};
     uint8_t b[3] = {0, 0, 255};
 
     esp_err_t ret = ESP_OK;
-    for(int idx = 0; idx < 2; idx++) {
+    for(int idx = 0; idx < 6; idx++) {
         ret = pca9955b_init(i2c_addr[idx], &pca9955b[idx]);
         if(ret != ESP_OK) {
             ESP_LOGE("pca9955b_test", "bad");
@@ -182,16 +182,15 @@ void pca9955b_test() {
     }
 
     for(int i = 0; i < 100; i++) {
-        for(int idx = 0; idx < 2; idx++) {
+        for(int idx = 0; idx < 6; idx++) {
             pca9955b_fill(pca9955b[idx], r[i % 3], g[i % 3], b[i % 3]);
         }
 
         uint64_t start_time = esp_timer_get_time();
-        for(int j = 0; j < 1; j++) {
-            for(int idx = 0; idx < 2; idx++) {
-                pca9955b_show(pca9955b[idx]);
-            }
+        for(int idx = 0; idx < 6; idx++) {
+            pca9955b_show(pca9955b[idx]);
         }
+
         uint64_t end_time1 = esp_timer_get_time();
 
         ESP_LOGI("pca9955b_test", "show: %lld us", end_time1 - start_time);
@@ -199,7 +198,7 @@ void pca9955b_test() {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    for(int idx = 0; idx < 2; idx++) {
+    for(int idx = 0; idx < 6; idx++) {
         pca9955b_del(&pca9955b[idx]);
     }
 

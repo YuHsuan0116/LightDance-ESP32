@@ -4,14 +4,12 @@
 #include "driver/rmt_encoder.h"
 #include "driver/rmt_tx.h"
 
+#include "BoardConfig.h"
 #include "ws2812b_encoder.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define RMT_MAX_CH_NUM 8
-#define RMT_TIMEOUT_MS 20
 
 typedef struct {
     rmt_channel_handle_t rmt_channel;

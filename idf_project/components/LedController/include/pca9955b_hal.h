@@ -2,12 +2,11 @@
 
 #include "driver/i2c_master.h"
 
+#include "BoardConfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define I2C_FREQ 400000
-#define I2C_TIMEOUT_MS 20
 
 typedef struct {
     i2c_master_dev_handle_t i2c_dev_handle;

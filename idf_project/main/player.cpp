@@ -26,7 +26,7 @@ void Player::taskEntry(void* pvParameters) {
 }
 
 void Player::Loop() {
-    currentState->enter();
+    currentState->enter(*this);
 
     Event event;
     while(1) {
@@ -43,13 +43,13 @@ void Player::Loop() {
 }
 
 void Player::changeState(State& newState) {
-    currentState->exit();
+    currentState->exit(*this);
     currentState = &newState;
-    currentState->enter();
+    currentState->enter(*this);
 }
 
 void Player::handleEvent(Event& event) {
-    currentState->handleEvent(event);
+    currentState->handleEvent(*this, event);
 }
 
 Player::Player() {}

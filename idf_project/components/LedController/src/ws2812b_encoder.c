@@ -2,6 +2,8 @@
 
 #include "esp_attr.h"
 
+#define WS2812B_RESOLUTION 10000000
+
 #define RMT_BYTES_ENCODER_CONFIG_DEFAULT()                                      \
     {                                                                           \
         .bit0 =                                                                 \

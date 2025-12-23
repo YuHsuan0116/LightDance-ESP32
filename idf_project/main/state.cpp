@@ -7,15 +7,15 @@ ResetState& ResetState::getInstance() {
     return s;
 }
 
-void ResetState::enter() {
+void ResetState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Reset!");
-    Player::getInstance().changeState(ReadyState::getInstance());
+    player.changeState(ReadyState::getInstance());
 }
-void ResetState::exit() {
+void ResetState::exit(Player& player) {
     ESP_LOGI("state.cpp", "Exit Reset!");
 }
-void ResetState::handleEvent(Event& event) {}
-void ResetState::update() {}
+void ResetState::handleEvent(Player& player, Event& event) {}
+void ResetState::update(Player& player) {}
 
 // ================= ReadyState =================
 ReadyState& ReadyState::getInstance() {
@@ -23,22 +23,22 @@ ReadyState& ReadyState::getInstance() {
     return s;
 }
 
-void ReadyState::enter() {
+void ReadyState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Ready!");
 }
-void ReadyState::exit() {
+void ReadyState::exit(Player& player) {
     ESP_LOGI("state.cpp", "Exit Ready!");
 }
 
-void ReadyState::handleEvent(Event& event) {
+void ReadyState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_PLAY) {
-        Player::getInstance().changeState(PlayingState::getInstance());
+        player.changeState(PlayingState::getInstance());
     }
     if(event.type == EVENT_TEST) {
-        Player::getInstance().changeState(TestState::getInstance());
+        player.changeState(TestState::getInstance());
     }
 }
-void ReadyState::update() {}
+void ReadyState::update(Player& player) {}
 
 // ================= PlayingState =================
 PlayingState& PlayingState::getInstance() {
@@ -46,22 +46,22 @@ PlayingState& PlayingState::getInstance() {
     return s;
 }
 
-void PlayingState::enter() {
+void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
 }
-void PlayingState::exit() {
+void PlayingState::exit(Player& player) {
     ESP_LOGI("state.cpp", "Exit Playing!");
 }
 
-void PlayingState::handleEvent(Event& event) {
+void PlayingState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_PAUSE) {
-        Player::getInstance().changeState(PauseState::getInstance());
+        player.changeState(PauseState::getInstance());
     }
     if(event.type == EVENT_RESET) {
-        Player::getInstance().changeState(ResetState::getInstance());
+        player.changeState(ResetState::getInstance());
     }
 }
-void PlayingState::update() {}
+void PlayingState::update(Player& player) {}
 
 // ================= PauseState =================
 PauseState& PauseState::getInstance() {
@@ -69,22 +69,22 @@ PauseState& PauseState::getInstance() {
     return s;
 }
 
-void PauseState::enter() {
+void PauseState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Pause!");
 }
-void PauseState::exit() {
+void PauseState::exit(Player& player) {
     ESP_LOGI("state.cpp", "Exit Pause!");
 }
 
-void PauseState::handleEvent(Event& event) {
+void PauseState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_PLAY) {
-        Player::getInstance().changeState(PlayingState::getInstance());
+        player.changeState(PlayingState::getInstance());
     }
     if(event.type == EVENT_RESET) {
-        Player::getInstance().changeState(ResetState::getInstance());
+        player.changeState(ResetState::getInstance());
     }
 }
-void PauseState::update() {}
+void PauseState::update(Player& player) {}
 
 // ================= TestState =================
 TestState& TestState::getInstance() {
@@ -92,16 +92,16 @@ TestState& TestState::getInstance() {
     return s;
 }
 
-void TestState::enter() {
+void TestState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Test!");
 }
-void TestState::exit() {
+void TestState::exit(Player& player) {
     ESP_LOGI("state.cpp", "Exit Test!");
 }
 
-void TestState::handleEvent(Event& event) {
+void TestState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_RESET) {
-        Player::getInstance().changeState(ResetState::getInstance());
+        player.changeState(ResetState::getInstance());
     }
 }
-void TestState::update() {}
+void TestState::update(Player& player) {}

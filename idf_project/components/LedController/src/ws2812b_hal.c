@@ -7,12 +7,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#define WS2812B_RESOLUTION 10000000
+
 static esp_err_t ws2812b_init_channel(gpio_num_t gpio_num, uint16_t pixel_num, rmt_channel_handle_t* channel) {
     rmt_tx_channel_config_t rmt_tx_channel_config = {
         .gpio_num = gpio_num,
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = WS2812B_RESOLUTION,
-        .mem_block_symbols = 512 / RMT_MAX_CH_NUM,
+        .mem_block_symbols = 512 / WS2812B_NUM,
         .trans_queue_depth = 8,
     };
 
