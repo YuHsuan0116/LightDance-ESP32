@@ -55,7 +55,7 @@ void Player::Loop() {
         if(xTaskNotifyWait(0, 0, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
             if(ulNotifiedValue == NOTIFICATION_UPDATE) {
                 ESP_LOGI("player.cpp", "Notified!");
-                currentState->update(*this);
+                update();
                 continue;
             }
             if(ulNotifiedValue == NOTIFICATION_EVENT) {
@@ -73,6 +73,10 @@ void Player::Loop() {
     }
 
     ESP_LOGI("player.cpp", "Exit Loop!");
+}
+
+void Player::update() {
+    currentState->update(*this);
 }
 
 void Player::handleEvent(Event& event) {

@@ -68,8 +68,8 @@ PlayingState& PlayingState::getInstance() {
 
 void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
-    player.startTimer(30);
-    // player.update();
+    player.startTimer(10);
+    player.update();
 }
 void PlayingState::exit(Player& player) {
     player.stopTimer();
@@ -88,6 +88,7 @@ void PlayingState::handleEvent(Player& player, Event& event) {
 void PlayingState::update(Player& player) {
     // player.computeFrame();
     // player.showFrame();
+    ESP_LOGI("state.cpp", "Update!");
 }
 
 // ================= PauseState =================
@@ -129,6 +130,7 @@ void TestState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Test!");
 
     player.startTimer(1);
+    player.update();
 }
 void TestState::exit(Player& player) {
 
@@ -144,4 +146,5 @@ void TestState::handleEvent(Player& player, Event& event) {
 void TestState::update(Player& player) {
     // player.updateTestFrame();
     // player.showFrame();
+    ESP_LOGI("state.cpp", "Update!");
 }
