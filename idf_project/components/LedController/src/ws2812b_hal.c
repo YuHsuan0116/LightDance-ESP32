@@ -35,11 +35,9 @@ esp_err_t ws2812b_init(gpio_num_t gpio_num, uint16_t pixel_num, ws2812b_handle_t
         return ESP_ERR_NO_MEM;
     }
 
-    dev->gpio_num = gpio_num;
     dev->pixel_num = pixel_num;
 
-    dev->buffer_size = 3 * pixel_num;
-    dev->buffer = (uint8_t*)calloc(dev->buffer_size, sizeof(uint8_t));
+    dev->buffer = calloc(3 * dev->pixel_num, sizeof(uint8_t));
     if(dev->buffer == NULL) {
         free(dev);
         return ESP_ERR_NO_MEM;
@@ -78,6 +76,19 @@ esp_err_t ws2812b_init(gpio_num_t gpio_num, uint16_t pixel_num, ws2812b_handle_t
     return ESP_OK;
 }
 
+esp_err_t ws2812b_set_pixel(ws2812b_handle_t ws2812b, int pixel_idx, uint8_t red, uint8_t green, uint8_t blue) {
+    ws2812b->buffer[3 * pixel_idx + 0] = green;
+    ws2812b->buffer[3 * pixel_idx + 1] = red;
+    ws2812b->buffer[3 * pixel_idx + 2] = blue;
+
+    return ESP_OK;
+}
+
+esp_err_t ws2812b_write(ws2812b_handle_t ws2812b, uint8_t* _buffer) {
+    memcpy(ws2812b->buffer, _buffer, 3 * ws2812b->pixel_num * sizeof(uint8_t));
+    return ESP_OK;
+}
+
 static const rmt_transmit_config_t rmt_tx_config = {
     .loop_count = 0,
     .flags =
@@ -97,7 +108,7 @@ esp_err_t ws2812b_show(ws2812b_handle_t ws2812b) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    return rmt_transmit(ws2812b->rmt_channel, ws2812b->rmt_encoder, ws2812b->buffer, ws2812b->buffer_size, &rmt_tx_config);
+    return rmt_transmit(ws2812b->rmt_channel, ws2812b->rmt_encoder, ws2812b->buffer, ws2812b->pixel_num * sizeof(pixel_t), &rmt_tx_config);
 }
 
 esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
@@ -108,7 +119,7 @@ esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
     ws2812b_dev_t* dev = *ws2812b;
 
     if(dev->rmt_channel) {
-        memset(dev->buffer, 0, dev->buffer_size * sizeof(uint8_t));
+        memset(dev->buffer, 0, dev->pixel_num * sizeof(pixel_t));
         ws2812b_show(dev);
     }
 
@@ -135,7 +146,7 @@ esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
 
 void ws2812b_fill(ws2812b_handle_t ws2812b, uint8_t red, uint8_t green, uint8_t blue) {
     for(int i = 0; i < ws2812b->pixel_num; i++) {
-        ws2812b->buffer[3 * i + 0] = green;
+        ws2812b->buffer[3 * i] = green;
         ws2812b->buffer[3 * i + 1] = red;
         ws2812b->buffer[3 * i + 2] = blue;
     }
@@ -146,41 +157,32 @@ esp_err_t ws2812b_wait_done(ws2812b_handle_t ws2812b) {
 }
 
 void ws2812b_test() {
-    ws2812b_handle_t ws2812b[8];
-    uint8_t gpio[8] = {32, 25, 26, 27, 19, 18, 5, 17};
+    ws2812b_handle_t ws2812b[WS2812B_NUM];
+    uint8_t pixel_num = 10;
 
-    for(int idx = 0; idx < 8; idx++) {
-        ws2812b_init(gpio[idx], 100, &ws2812b[idx]);
+    for(int idx = 0; idx < WS2812B_NUM; idx++) {
+        ws2812b_init(BOARD_HW_CONFIG.rmt_pins[idx], pixel_num, &ws2812b[idx]);
     }
 
     uint8_t r[3] = {15, 0, 0};
     uint8_t g[3] = {0, 15, 0};
     uint8_t b[3] = {0, 0, 15};
 
-    int test_case = 8;
-
-    for(int i = 0; i < 100; i++) {
-        for(int idx = 0; idx < test_case; idx++) {
-            ws2812b_fill(ws2812b[idx], r[i % 3], g[i % 3], b[i % 3]);
+    for(int i = 0; i < 30; i++) {
+        for(int idx = 0; idx < WS2812B_NUM; idx++) {
+            for(int pixel_idx = 0; pixel_idx < pixel_num; pixel_idx++) {
+                ws2812b_set_pixel(ws2812b[idx], pixel_idx, r[i % 3], g[i % 3], b[i % 3]);
+            }
         }
 
-        uint64_t start_time = esp_timer_get_time();
-        for(int idx = 0; idx < test_case; idx++) {
+        for(int idx = 0; idx < WS2812B_NUM; idx++) {
             ws2812b_show(ws2812b[idx]);
         }
-        uint64_t end_time1 = esp_timer_get_time();
 
-        for(int idx = 0; idx < test_case; idx++) {
-            ws2812b_wait_done(ws2812b[idx]);
-        }
-        uint64_t end_time2 = esp_timer_get_time();
-
-        ESP_LOGI("ws2812b_test", "show: %lld us, wait_done: %lld us", end_time1 - start_time, end_time2 - start_time);
-
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
-    for(int idx = 0; idx < test_case; idx++) {
+    for(int idx = 0; idx < WS2812B_NUM; idx++) {
         ws2812b_del(&ws2812b[idx]);
     }
 }

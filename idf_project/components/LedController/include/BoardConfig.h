@@ -11,6 +11,11 @@
 #define I2C_TIMEOUT_MS 20
 #define RMT_TIMEOUT_MS 20
 
+typedef union {
+    uint8_t RGB[3];
+    uint8_t GRB[3];
+} pixel_t;
+
 typedef struct {
     union {
         gpio_num_t rmt_pins[WS2812B_NUM];

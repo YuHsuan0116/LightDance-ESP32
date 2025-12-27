@@ -9,13 +9,24 @@ ResetState& ResetState::getInstance() {
 
 void ResetState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Reset!");
+
+    player.deinitTimer();
+    // player.deinitDrivers();
+    // player.freeBuffers()
+
     player.changeState(ReadyState::getInstance());
 }
 void ResetState::exit(Player& player) {
+    // Do nothing
+
     ESP_LOGI("state.cpp", "Exit Reset!");
 }
-void ResetState::handleEvent(Player& player, Event& event) {}
-void ResetState::update(Player& player) {}
+void ResetState::handleEvent(Player& player, Event& event) {
+    // ignore
+}
+void ResetState::update(Player& player) {
+    // ignore
+}
 
 // ================= ReadyState =================
 ReadyState& ReadyState::getInstance() {
@@ -25,8 +36,15 @@ ReadyState& ReadyState::getInstance() {
 
 void ReadyState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Ready!");
+
+    player.initTimer();
+    // player.initDrivers();
+    // player.allocateBuffers();
+    // player.resetFrameIndex();
 }
 void ReadyState::exit(Player& player) {
+    // Do nothing
+
     ESP_LOGI("state.cpp", "Exit Ready!");
 }
 
@@ -38,7 +56,9 @@ void ReadyState::handleEvent(Player& player, Event& event) {
         player.changeState(TestState::getInstance());
     }
 }
-void ReadyState::update(Player& player) {}
+void ReadyState::update(Player& player) {
+    // ignore
+}
 
 // ================= PlayingState =================
 PlayingState& PlayingState::getInstance() {
@@ -48,8 +68,12 @@ PlayingState& PlayingState::getInstance() {
 
 void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
+    player.startTimer(30);
+    // player.update();
 }
 void PlayingState::exit(Player& player) {
+    player.stopTimer();
+
     ESP_LOGI("state.cpp", "Exit Playing!");
 }
 
@@ -61,7 +85,10 @@ void PlayingState::handleEvent(Player& player, Event& event) {
         player.changeState(ResetState::getInstance());
     }
 }
-void PlayingState::update(Player& player) {}
+void PlayingState::update(Player& player) {
+    // player.computeFrame();
+    // player.showFrame();
+}
 
 // ================= PauseState =================
 PauseState& PauseState::getInstance() {
@@ -71,8 +98,12 @@ PauseState& PauseState::getInstance() {
 
 void PauseState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Pause!");
+
+    // Do nothing
 }
 void PauseState::exit(Player& player) {
+    // Do nothing
+
     ESP_LOGI("state.cpp", "Exit Pause!");
 }
 
@@ -84,7 +115,9 @@ void PauseState::handleEvent(Player& player, Event& event) {
         player.changeState(ResetState::getInstance());
     }
 }
-void PauseState::update(Player& player) {}
+void PauseState::update(Player& player) {
+    // ignore
+}
 
 // ================= TestState =================
 TestState& TestState::getInstance() {
@@ -94,8 +127,12 @@ TestState& TestState::getInstance() {
 
 void TestState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Test!");
+
+    player.startTimer(1);
 }
 void TestState::exit(Player& player) {
+
+    player.stopTimer();
     ESP_LOGI("state.cpp", "Exit Test!");
 }
 
@@ -104,4 +141,7 @@ void TestState::handleEvent(Player& player, Event& event) {
         player.changeState(ResetState::getInstance());
     }
 }
-void TestState::update(Player& player) {}
+void TestState::update(Player& player) {
+    // player.updateTestFrame();
+    // player.showFrame();
+}

@@ -8,25 +8,38 @@
 extern "C" {
 #endif
 
+typedef struct __attribute__((packed)) {
+
+    uint8_t pwm_reg0;
+    union {
+        uint8_t data[15];
+        struct __attribute__((packed)) {
+            uint8_t ch[5][3];
+        };
+    };
+} pca9955b_buffer_t;
+
 typedef struct {
     i2c_master_dev_handle_t i2c_dev_handle;
 
-    bool need_reset_IREF;
     uint8_t i2c_addr;
-    uint8_t* buffer;
-    uint8_t* IREF_cmd;
+    pca9955b_buffer_t buffer;
+
+    bool need_reset_IREF;
+    uint8_t IREF_cmd[2];
 } pca9955b_dev_t;
 
 typedef pca9955b_dev_t* pca9955b_handle_t;
 
-esp_err_t pca9955b_init(uint8_t i2c_addr, pca9955b_handle_t* pca9955);
+esp_err_t i2c_bus_init(gpio_num_t i2c_gpio_sda, gpio_num_t i2c_gpio_scl, i2c_master_bus_handle_t* ret_i2c_bus_handle);
+
+esp_err_t pca9955b_init(uint8_t i2c_addr, i2c_master_bus_handle_t i2c_bus_handle, pca9955b_handle_t* pca9955);
+esp_err_t pca9955b_set_pixel(pca9955b_handle_t pca9955b, uint8_t pixel_idx, uint8_t red, uint8_t green, uint8_t blue);
 esp_err_t pca9955b_show(pca9955b_handle_t pca9955b);
 esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b);
 
+esp_err_t pca9955b_write(pca9955b_handle_t pca9955b, uint8_t* buffer);
 esp_err_t pca9955b_fill(pca9955b_handle_t pca9955b, uint8_t red, uint8_t green, uint8_t blue);
-esp_err_t pca9955b_write_buffer(pca9955b_handle_t pca9955b, uint8_t* buffer);
-
-esp_err_t i2c_bus_init(gpio_num_t i2c_gpio_sda, gpio_num_t i2c_gpio_scl, i2c_master_bus_handle_t* ret_i2c_bus_handle);
 
 void pca9955b_test();
 
