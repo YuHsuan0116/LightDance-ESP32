@@ -4,6 +4,8 @@
 #include "pca9955b_hal.h"
 #include "ws2812b_hal.h"
 
+#define SHOW_TIME_PER_FRAME false
+
 class LedController {
   public:
     LedController();
@@ -20,6 +22,8 @@ class LedController {
     esp_err_t fill(uint8_t, uint8_t, uint8_t);
     esp_err_t clear_buffer();
     esp_err_t black_out();
+
+    void print_buffer();
 
   private:
     i2c_master_bus_handle_t bus_handle;

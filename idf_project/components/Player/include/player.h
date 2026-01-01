@@ -38,45 +38,52 @@ class Player {
     void sendEvent(Event& event);
 
     TaskHandle_t& getTaskHandle();
-    QueueHandle_t& getEventQueue();
 
   private:
     Player();
 
     // ================= Finite State Machine =================
+
     friend class ResetState;
     friend class ReadyState;
     friend class PlayingState;
     friend class PauseState;
     friend class TestState;
+
     State* currentState;
     void update();
     void handleEvent(Event& event);
     void changeState(State& newState);
 
     // ================= Resources =================
+
     gptimer_handle_t gptimer;
 
     LedController controller;
     ch_info_t ch_info;
     uint8_t** buffers;
 
+    int cur_frame_idx;
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
 
     // ================= Task Managment =================
+
     esp_err_t createTask();
     static void taskEntry(void* pvParameters);
     void Loop();
 
     // ================= Timer Function Implementation =================
+
     void initTimer();
     void startTimer(int fps);
     void stopTimer();
     void deinitTimer();
 
     // ================= Driver Function Implementation =================
+
     void initDrivers();
+    void computeTestFrame();
     void computeFrame();
     void showFrame();
     void deinitDrivers();

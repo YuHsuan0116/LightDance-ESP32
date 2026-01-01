@@ -1,7 +1,9 @@
+#include "LedController.hpp"
+
+#include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#include "LedController.hpp"
 
 #include "BoardConfig.h"
 #include "pca9955b_hal.h"
@@ -57,12 +59,24 @@ esp_err_t LedController::write_buffer(uint8_t** buffer) {
     return ESP_OK;
 }
 
+static uint64_t start;
+static uint64_t end;
 esp_err_t LedController::show() {
+    if(SHOW_TIME_PER_FRAME) {
+        start = esp_timer_get_time();
+    }
     for(int i = 0; i < WS2812B_NUM; i++) {
         ws2812b_show(ws2812b_devs[i]);
     }
     for(int i = 0; i < PCA9955B_NUM; i++) {
         pca9955b_show(pca9955b_devs[i]);
+    }
+    for(int i = 0; i < WS2812B_NUM; i++) {
+        ws2812b_wait_done(ws2812b_devs[i]);
+    }
+    if(SHOW_TIME_PER_FRAME) {
+        end = esp_timer_get_time();
+        ESP_LOGI("LedController.cpp", "show(): %llu us", end - start);
     }
 
     return ESP_OK;
@@ -76,8 +90,8 @@ esp_err_t LedController::deinit() {
         pca9955b_del(&(pca9955b_devs[i]));
     }
 
-    memset(&ch_info, 0, sizeof(ch_info_t));
-    memset(buffer_entrance, 0, (WS2812B_NUM + PCA9955B_CH_NUM) * sizeof(pixel_t));
+    // memset(&ch_info, 0, sizeof(ch_info_t));
+    memset(buffer_entrance, 0, 3 * (WS2812B_NUM + PCA9955B_CH_NUM) * sizeof(uint8_t));
 
     i2c_del_master_bus(bus_handle);
 
@@ -105,7 +119,7 @@ esp_err_t LedController::fill(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 esp_err_t LedController::ch_write_buffer(int idx, uint8_t* buffer) {
-    memcpy(buffer_entrance[idx], buffer, ch_info.pixel_counts[idx] * sizeof(pixel_t));
+    memcpy(buffer_entrance[idx], buffer, 3 * ch_info.pixel_counts[idx] * sizeof(uint8_t));
     return ESP_OK;
 }
 
@@ -120,7 +134,7 @@ esp_err_t LedController::dev_write_buffer(int idx, uint8_t* buffer) {
 
 esp_err_t LedController::clear_buffer() {
     for(int i = 0; i < WS2812B_NUM; i++) {
-        memset(ws2812b_devs[i]->buffer, 0, ws2812b_devs[i]->pixel_num * sizeof(pixel_t));
+        memset(ws2812b_devs[i]->buffer, 0, 3 * ws2812b_devs[i]->pixel_num * sizeof(uint8_t));
     }
     for(int i = 0; i < PCA9955B_NUM; i++) {
         memset(pca9955b_devs[i]->buffer.data, 0, 15);
@@ -154,4 +168,10 @@ void Controller_test() {
     }
 
     controller.deinit();
+}
+
+void LedController::print_buffer() {
+    for(int i = 0; i < WS2812B_NUM; i++) {
+        ws2812b_print_buffer(ws2812b_devs[i]);
+    }
 }

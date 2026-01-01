@@ -2,6 +2,8 @@
 
 #include "player.h"
 
+#define SHOW_TRANSITION 0
+
 class State {
   public:
     virtual ~State() = default;

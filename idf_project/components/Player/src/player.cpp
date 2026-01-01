@@ -1,5 +1,6 @@
 #include "player.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "state.h"
 
 #define NOTIFICATION_UPDATE 1
@@ -16,10 +17,6 @@ TaskHandle_t& Player::getTaskHandle() {
     return taskHandle;
 }
 
-QueueHandle_t& Player::getEventQueue() {
-    return eventQueue;
-}
-
 void Player::sendEvent(Event& event) {
     xQueueSend(eventQueue, &event, 1000);
     xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetValueWithOverwrite);
@@ -34,7 +31,7 @@ void Player::start() {
 }
 
 esp_err_t Player::createTask() {
-    BaseType_t res = xTaskCreate(Player::taskEntry, "PlayerTask", 8192, NULL, 5, &taskHandle);
+    BaseType_t res = xTaskCreatePinnedToCore(Player::taskEntry, "PlayerTask", 8192, NULL, 5, &taskHandle, 0);
     return (res == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -53,26 +50,31 @@ void Player::Loop() {
 
     while(1) {
         if(xTaskNotifyWait(0, 0, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
+            uint64_t start = esp_timer_get_time();
             if(ulNotifiedValue == NOTIFICATION_UPDATE) {
-                ESP_LOGI("player.cpp", "Notified!");
+                // ESP_LOGI("player.cpp", "Notified!");
                 update();
+                uint64_t end = esp_timer_get_time();
+                // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
                 continue;
             }
             if(ulNotifiedValue == NOTIFICATION_EVENT) {
                 if(xQueueReceive(eventQueue, &event, 10)) {
-                    ESP_LOGI("player.cpp", "Received Event!");
+                    // ESP_LOGI("player.cpp", "Received Event!");
                     handleEvent(event);
-                    if(event.type == EVENT_KILL) {
+                    if(event.type == EVENT_RESET && event.data == 1) {
                         break;
                     }
                 } else {
-                    ESP_LOGI("player.cpp", "xQueueReceive Timeout!");
+                    // ESP_LOGI("player.cpp", "xQueueReceive Timeout!");
                 }
             }
+            // uint64_t end = esp_timer_get_time();
+            // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
         }
     }
 
-    ESP_LOGI("player.cpp", "Exit Loop!");
+    // ESP_LOGI("player.cpp", "Exit Loop!");
 }
 
 void Player::update() {
@@ -135,9 +137,39 @@ void Player::deinitTimer() {
 }
 
 void Player::initDrivers() {
+    for(int i = 0; i < WS2812B_NUM; i++) {
+        ch_info.rmt_strips[i] = 100;
+    }
+    for(int i = 0; i < PCA9955B_CH_NUM; i++) {
+        ch_info.i2c_leds[i] = 1;
+    }
+
     controller.init(ch_info);
 }
 
 void Player::deinitDrivers() {
     controller.deinit();
+    vTaskDelay(pdMS_TO_TICKS(100));
+}
+
+void Player::resetFrameIndex() {
+    cur_frame_idx = -1;
+}
+
+void Player::computeTestFrame() {
+    uint8_t max_brightness = 15;
+    if(cur_frame_idx % 3 == 0) {
+        controller.fill(max_brightness, 0, 0);
+    }
+    if(cur_frame_idx % 3 == 1) {
+        controller.fill(0, max_brightness, 0);
+    }
+    if(cur_frame_idx % 3 == 2) {
+        controller.fill(0, 0, max_brightness);
+    }
+}
+
+void Player::showFrame() {
+    // controller.print_buffer();
+    controller.show();
 }
