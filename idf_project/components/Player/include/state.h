@@ -24,6 +24,7 @@ class ResetState: public State {
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
+
 class ReadyState: public State {
   public:
     static ReadyState& getInstance();
@@ -32,6 +33,7 @@ class ReadyState: public State {
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
+
 class PlayingState: public State {
   public:
     static PlayingState& getInstance();
@@ -40,6 +42,7 @@ class PlayingState: public State {
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
+
 class PauseState: public State {
   public:
     static PauseState& getInstance();
@@ -48,6 +51,7 @@ class PauseState: public State {
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
+
 class TestState: public State {
   public:
     static TestState& getInstance();
@@ -55,4 +59,9 @@ class TestState: public State {
     void exit(Player& player) override;
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
+
+    void setTestMode(TEST_MODE_t _mode);
+
+  private:
+    TEST_MODE_t mode;
 };

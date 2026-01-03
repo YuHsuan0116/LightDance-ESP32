@@ -50,11 +50,11 @@ void Player::Loop() {
 
     while(1) {
         if(xTaskNotifyWait(0, 0, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
-            uint64_t start = esp_timer_get_time();
+            // uint64_t start = esp_timer_get_time();
             if(ulNotifiedValue == NOTIFICATION_UPDATE) {
                 // ESP_LOGI("player.cpp", "Notified!");
                 update();
-                uint64_t end = esp_timer_get_time();
+                // uint64_t end = esp_timer_get_time();
                 // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
                 continue;
             }
@@ -153,18 +153,18 @@ void Player::deinitDrivers() {
 }
 
 void Player::resetFrameIndex() {
-    cur_frame_idx = -1;
+    cur_frame_idx = 0;
 }
 
-void Player::computeTestFrame() {
+void Player::computeTestFrame(int frame_idx) {
     uint8_t max_brightness = 15;
-    if(cur_frame_idx % 3 == 0) {
+    if(frame_idx % 3 == 0) {
         controller.fill(max_brightness, 0, 0);
     }
-    if(cur_frame_idx % 3 == 1) {
+    if(frame_idx % 3 == 1) {
         controller.fill(0, max_brightness, 0);
     }
-    if(cur_frame_idx % 3 == 2) {
+    if(frame_idx % 3 == 2) {
         controller.fill(0, 0, max_brightness);
     }
 }
