@@ -8,15 +8,14 @@
 
 typedef enum {
     EVENT_PLAY,
-    EVENT_PAUSE,
     EVENT_TEST,
+    EVENT_PAUSE,
     EVENT_RESET,
-    EVENT_KILL,
+    EVENT_READY,
 } event_t;
 
 struct Event {
     event_t type;
-    int data;
 };
 
 class State;
@@ -66,10 +65,8 @@ class Player {
     ch_info_t ch_info;
     uint8_t** buffers;
 
-    int cur_frame_idx;
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
-
 
     // ================= Task Managment =================
 

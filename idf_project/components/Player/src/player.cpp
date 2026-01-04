@@ -61,7 +61,7 @@ void Player::Loop() {
                 if(xQueueReceive(eventQueue, &event, 10)) {
                     // ESP_LOGI("player.cpp", "Received Event!");
                     handleEvent(event);
-                    if(event.type == EVENT_RESET && event.data == 1) {
+                    if(event.type == EVENT_RESET) {
                         break;
                     }
                 } else {
@@ -149,10 +149,6 @@ void Player::initDrivers() {
 void Player::deinitDrivers() {
     controller.deinit();
     vTaskDelay(pdMS_TO_TICKS(100));
-}
-
-void Player::resetFrameIndex() {
-    cur_frame_idx = -1;
 }
 
 void Player::computeTestFrame() {

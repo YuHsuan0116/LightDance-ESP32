@@ -48,17 +48,17 @@ class PlayingState: public State {
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
-class PauseState: public State {
+class TestState: public State {
   public:
-    static PauseState& getInstance();
+    static TestState& getInstance();
     void enter(Player& player) override;
     void exit(Player& player) override;
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
 };
-class TestState: public State {
+class PauseState: public State {
   public:
-    static TestState& getInstance();
+    static PauseState& getInstance();
     void enter(Player& player) override;
     void exit(Player& player) override;
     void handleEvent(Player& player, Event& event) override;
