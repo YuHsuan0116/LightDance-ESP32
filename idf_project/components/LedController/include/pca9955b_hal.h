@@ -9,18 +9,21 @@ extern "C" {
 #endif
 
 /**
- * @brief Packed 16-byte buffer mapping 1 PWM register + 5 RGB channels (3 bytes each).
+ * @brief Packed 16-byte buffer mapping 1 Command Byte + 15 PWM channels.
  *
+ * This structure is designed for I2C burst writes.
  * Memory layout (16 bytes total):
- *   [0]        pwm_reg0
- *   [1..15]    channel color data (union view as raw bytes or 5×3 RGB)
+ * [0]      Command Byte (Start Register Address + Auto-Increment Flag)
+ * [1..15]  Channel color data (Mapped as 5 RGB LEDs)
+ *
+ * @note This covers PWM0 to PWM14. PWM15 is unused in this layout.
  */
 typedef struct __attribute__((packed)) {
-    uint8_t pwm_reg0; /*!< Global PWM register value */
+    uint8_t command_byte; /*!< I2C Command byte: Register Address | Auto-Increment Bit */
     union {
         uint8_t data[15]; /*!< Raw access to 15-byte channel color payload */
         struct __attribute__((packed)) {
-            uint8_t ch[5][3]; /*!< 5 channels × 3 bytes (R,G,B) */
+            uint8_t ch[5][3]; /*!< logical mapping: 5 LEDs x 3 channels (R, G, B) */
         };
     };
 } pca9955b_buffer_t;
@@ -32,9 +35,10 @@ typedef struct __attribute__((packed)) {
  */
 typedef struct {
     i2c_master_dev_handle_t i2c_dev_handle; /*!< I2C bus device handle */
+    uint8_t i2c_addr;                       /*!< 7-bit I2C device address */
 
-    uint8_t i2c_addr;         /*!< 7-bit I2C device address */
     pca9955b_buffer_t buffer; /*!< PWM register + LED color buffer */
+    bool need_update;         /*!< Dirty flag for buffer */
 
     bool need_reset_IREF; /*!< Set true if IREF register needs to be reinitialized */
     uint8_t IREF_cmd[2];  /*!< 2-byte IREF reset command to send over I2C */
@@ -46,59 +50,128 @@ typedef struct {
 typedef pca9955b_dev_t* pca9955b_handle_t;
 
 /**
- * @brief Initialize an I2C master bus.
+ * @brief Initializes the I2C master bus.
  *
- * Configures GPIOs for SDA/SCL and returns a master bus handle.
+ * This function configures the I2C controller in master mode.
  *
- * @param i2c_gpio_sda  GPIO pin for I2C SDA
- * @param i2c_gpio_scl  GPIO pin for I2C SCL
- * @param ret_i2c_bus_handle  Pointer to receive initialized I2C bus handle
- * @return ESP_OK on success, or I2C/driver error code
+ * @note The internal pull-ups are enabled, but they are weak (~45kOhm).
+ * For 400kHz operation or long wires, external pull-ups (e.g., 2.2k - 4.7k)
+ * are strongly recommended.
+ *
+ * @param[in]  i2c_gpio_sda       GPIO number for SDA line.
+ * @param[in]  i2c_gpio_scl       GPIO number for SCL line.
+ * @param[out] ret_i2c_bus_handle Pointer to store the created I2C bus handle.
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_ERR_INVALID_ARG: SDA/SCL pins are the same, or handle pointer is NULL.
+ * - ESP_FAIL: Driver installation failed.
  */
 esp_err_t i2c_bus_init(gpio_num_t i2c_gpio_sda, gpio_num_t i2c_gpio_scl, i2c_master_bus_handle_t* ret_i2c_bus_handle);
 
 /**
- * @brief Initialize a PCA9955B LED driver on an existing I2C master bus.
+ * @brief Initializes the PCA9955B LED driver.
  *
- * @param i2c_addr  7-bit I2C address of the PCA9955B device
- * @param i2c_bus_handle  Initialized I2C master bus handle
- * @param pca9955b  Pointer to receive the created PCA9955B device handle
- * @return ESP_OK on success, or memory/I2C/driver error code
+ * This function allocates memory, registers the I2C device, and performs the
+ * initial hardware setup.
+ *
+ * @param[in]  i2c_addr        I2C address of the device (usually 0x69 for PCA9955B).
+ * @param[in]  i2c_bus_handle  Handle to the configured I2C master bus.
+ * @param[out] pca9955b        Pointer to store the created device handle.
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_ERR_INVALID_ARG: Null pointer arguments.
+ * - ESP_ERR_NO_MEM: Memory allocation failed.
+ * - ESP_ERR_NOT_FOUND: Device not acknowledged on I2C bus.
  */
 esp_err_t pca9955b_init(uint8_t i2c_addr, i2c_master_bus_handle_t i2c_bus_handle, pca9955b_handle_t* pca9955);
 
 /**
- * @brief Set RGB value of a single pixel in the PCA9955B frame buffer.
+ * @brief Sets the RGB color for a specific logical LED in the internal shadow buffer.
  *
- * @param pca9955b    PCA9955B device handle
- * @param pixel_idx   Pixel index (0–4)
- * @param red         8-bit red intensity
- * @param green       8-bit green intensity
- * @param blue        8-bit blue intensity
- * @return ESP_OK
+ * @note This function only updates the local buffer. It does not transmit data
+ * to the PCA9955B chip immediately.
+ *
+ * @param[in] pca9955b  Handle to the PCA9955B device.
+ * @param[in] pixel_idx Index of the LED pixel (0 to 4).
+ * @param[in] red       Red intensity value (0-255).
+ * @param[in] green     Green intensity value (0-255).
+ * @param[in] blue      Blue intensity value (0-255).
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_ERR_INVALID_ARG: Handle is NULL or pixel_idx is out of range.
  */
 esp_err_t pca9955b_set_pixel(pca9955b_handle_t pca9955b, uint8_t pixel_idx, uint8_t red, uint8_t green, uint8_t blue);
 
 /**
- * @brief Flush the 16-byte packed LED frame buffer to the PCA9955B over I2C.
+ * @brief Transmits the internal color buffer to the PCA9955B via I2C.
  *
- * @param pca9955b  PCA9955B device handle
- * @return ESP_OK on success, or I2C transmit error
+ * This function checks if the buffer has been modified (dirty flag) before transmitting.
+ * It also handles automatic IREF restoration if a previous transmission failed.
+ *
+ * @param[in] pca9955b Handle to the PCA9955B device.
+ *
+ * @return
+ * - ESP_OK: Success (or no update needed).
+ * - ESP_ERR_INVALID_ARG: Handle is NULL.
+ * - ESP_ERR_TIMEOUT: I2C bus is busy.
+ * - ESP_FAIL: I2C transmission failed (Device NACK).
  */
 esp_err_t pca9955b_show(pca9955b_handle_t pca9955b);
 
 /**
- * @brief Deinitialize and free a PCA9955B device instance.
+ * @brief Deinitializes the PCA9955B device.
  *
- * @param pca9955b  Pointer to PCA9955B device handle to delete
- * @return ESP_OK
+ * This function turns off all LEDs (best effort), removes the device from the I2C bus,
+ * frees the allocated memory, and sets the handle to NULL.
+ *
+ * @param[in,out] pca9955b Pointer to the device handle. Will be set to NULL on success.
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_OK: Even if the handle was already NULL (idempotent).
  */
 esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b);
 
-esp_err_t pca9955b_write(pca9955b_handle_t pca9955b, uint8_t* buffer);
+/**
+ * @brief Bulk updates all LED channels by copying a raw byte array to the internal buffer.
+ *
+ * This allows setting all 15 PWM channels at once using a pre-calculated buffer.
+ *
+ * @note The input buffer must contain exactly 15 bytes (PWM0 to PWM14).
+ * @note This function only updates the local buffer.
+ *
+ * @param[in] pca9955b Handle to the PCA9955B device.
+ * @param[in] _buffer  Pointer to a 15-byte array containing PWM values.
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_ERR_INVALID_ARG: Handle or buffer is NULL.
+ */
+esp_err_t pca9955b_write(pca9955b_handle_t pca9955b, const uint8_t* buffer);
+
+/**
+ * @brief Fills all LED channels with a single color.
+ *
+ * This is a helper function to set all 5 RGB LEDs to the same color instantly.
+ *
+ * @note This function only updates the local buffer. Call pca9955b_show() to transmit.
+ *
+ * @param[in] pca9955b Handle to the PCA9955B device.
+ * @param[in] red      Red intensity value (0-255).
+ * @param[in] green    Green intensity value (0-255).
+ * @param[in] blue     Blue intensity value (0-255).
+ *
+ * @return
+ * - ESP_OK: Success.
+ * - ESP_ERR_INVALID_ARG: Handle is NULL.
+ */
 esp_err_t pca9955b_fill(pca9955b_handle_t pca9955b, uint8_t red, uint8_t green, uint8_t blue);
 
-void pca9955b_test();
+void pca9955b_test1();
+void pca9955b_test2();
 
 #ifdef __cplusplus
 }

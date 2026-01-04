@@ -9,4 +9,6 @@ void app_main() {
     Player::getInstance().start();
 
     start_console();
+    // ws2812b_test2();
+    // pca9955b_test2();
 }

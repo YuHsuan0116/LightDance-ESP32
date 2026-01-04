@@ -9,8 +9,6 @@
 
 #include "player.h"
 
-static const char* TAG = "console";
-
 #define PROMPT_STR "cmd"
 
 static Event e;
@@ -25,12 +23,14 @@ static int sendPlay(int argc, char** argv) {
 }
 
 static void register_sendPlay(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "play",
-        .help = "send play",
-        .hint = NULL,
-        .func = &sendPlay,
-    };
+    const esp_console_cmd_t cmd = {.command = "play",
+                                   .help = "send play",
+                                   .hint = NULL,
+                                   .func = &sendPlay,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
@@ -42,12 +42,14 @@ static int sendPause(int argc, char** argv) {
 }
 
 static void register_sendPause(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "pause",
-        .help = "send pause",
-        .hint = NULL,
-        .func = &sendPause,
-    };
+    const esp_console_cmd_t cmd = {.command = "pause",
+                                   .help = "send pause",
+                                   .hint = NULL,
+                                   .func = &sendPause,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
@@ -58,12 +60,14 @@ static int sendTest(int argc, char** argv) {
 }
 
 static void register_sendTest(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "test",
-        .help = "send test",
-        .hint = NULL,
-        .func = &sendTest,
-    };
+    const esp_console_cmd_t cmd = {.command = "test",
+                                   .help = "send test",
+                                   .hint = NULL,
+                                   .func = &sendTest,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
@@ -75,12 +79,14 @@ static int sendReset(int argc, char** argv) {
 }
 
 static void register_sendReset(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "reset",
-        .help = "send reset",
-        .hint = NULL,
-        .func = &sendReset,
-    };
+    const esp_console_cmd_t cmd = {.command = "reset",
+                                   .help = "send reset",
+                                   .hint = NULL,
+                                   .func = &sendReset,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
@@ -92,12 +98,14 @@ static int sendExit(int argc, char** argv) {
 }
 
 static void register_sendExit(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "exit",
-        .help = "send exit",
-        .hint = NULL,
-        .func = &sendExit,
-    };
+    const esp_console_cmd_t cmd = {.command = "exit",
+                                   .help = "send exit",
+                                   .hint = NULL,
+                                   .func = &sendExit,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
@@ -107,12 +115,14 @@ static int stop_console(int argc, char** argv) {
 }
 
 static void register_stop_console(void) {
-    const esp_console_cmd_t cmd = {
-        .command = "stop",
-        .help = "stop console",
-        .hint = NULL,
-        .func = &stop_console,
-    };
+    const esp_console_cmd_t cmd = {.command = "stop",
+                                   .help = "stop console",
+                                   .hint = NULL,
+                                   .func = &stop_console,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
