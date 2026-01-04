@@ -55,6 +55,9 @@ class Player {
     void handleEvent(Event& event);
     void changeState(State& newState);
 
+    bool isHardwareInitialized = false; 
+    int init_retry_count = 0;
+
     // ================= Resources =================
 
     gptimer_handle_t gptimer;
@@ -66,6 +69,7 @@ class Player {
     int cur_frame_idx;
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
+
 
     // ================= Task Managment =================
 

@@ -3,8 +3,8 @@
 #include "esp_timer.h"
 #include "state.h"
 
-#define NOTIFICATION_UPDATE 1
-#define NOTIFICATION_EVENT 2
+#define NOTIFICATION_UPDATE (1 << 0)
+#define NOTIFICATION_EVENT (1 << 1)
 
 Player::Player() {}
 
@@ -19,12 +19,12 @@ TaskHandle_t& Player::getTaskHandle() {
 
 void Player::sendEvent(Event& event) {
     xQueueSend(eventQueue, &event, 1000);
-    xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetValueWithOverwrite);
+    xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
 }
 
 void Player::start() {
     eventQueue = xQueueCreate(50, sizeof(Event));
-    currentState = &ReadyState::getInstance();
+    currentState = &ResetState::getInstance();
     // ch_info = get_ch_info();
 
     createTask();
@@ -49,16 +49,15 @@ void Player::Loop() {
     uint32_t ulNotifiedValue;
 
     while(1) {
-        if(xTaskNotifyWait(0, 0, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
+        if(xTaskNotifyWait(0, 0xFFFFFFFF, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
             uint64_t start = esp_timer_get_time();
-            if(ulNotifiedValue == NOTIFICATION_UPDATE) {
+            if((ulNotifiedValue & NOTIFICATION_UPDATE) != 0) {
                 // ESP_LOGI("player.cpp", "Notified!");
                 update();
                 uint64_t end = esp_timer_get_time();
                 // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
-                continue;
             }
-            if(ulNotifiedValue == NOTIFICATION_EVENT) {
+            if((ulNotifiedValue & NOTIFICATION_EVENT) != 0) {
                 if(xQueueReceive(eventQueue, &event, 10)) {
                     // ESP_LOGI("player.cpp", "Received Event!");
                     handleEvent(event);
@@ -93,7 +92,7 @@ void Player::changeState(State& newState) {
 
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_ctx) {
     Player& player = Player::getInstance();
-    xTaskNotify(player.getTaskHandle(), NOTIFICATION_UPDATE, eSetValueWithOverwrite);
+    xTaskNotify(player.getTaskHandle(), NOTIFICATION_UPDATE, eSetBits);
     return false;
 }
 
