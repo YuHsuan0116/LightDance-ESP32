@@ -10,7 +10,7 @@
 /**
  * @brief Number of PCA9955B constant-current LED driver ICs on the I2C bus.
  */
-#define PCA9955B_NUM 8
+#define PCA9955B_NUM 2
 
 /**
  * @brief Total number of PCA9955B hardware LED output channels across all driver ICs.

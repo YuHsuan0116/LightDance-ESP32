@@ -59,9 +59,4 @@ class TestState: public State {
     void exit(Player& player) override;
     void handleEvent(Player& player, Event& event) override;
     void update(Player& player) override;
-
-    void setTestMode(TEST_MODE_t _mode);
-
-  private:
-    TEST_MODE_t mode;
 };

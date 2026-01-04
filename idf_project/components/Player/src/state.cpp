@@ -66,8 +66,6 @@ void ReadyState::handleEvent(Player& player, Event& event) {
         player.changeState(PlayingState::getInstance());
     }
     if(event.type == EVENT_TEST) {
-        TestState::getInstance().setTestMode((TEST_MODE_t)event.mode);
-        player.controller.fill(event.red, event.green, event.blue);
         player.changeState(TestState::getInstance());
     }
     if(event.type == EVENT_RESET && event.data == 0) {
@@ -95,7 +93,7 @@ void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
 
-    player.startTimer(10);
+    player.startTimer(30);
     player.update();
 }
 
@@ -170,19 +168,13 @@ void TestState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Test!");
 #endif
-    if(mode == TEST_MODE_SET_RGB) {
-        player.update();
-    }
-    if(mode == TEST_MODE_BREATHING) {
-        player.startTimer(1);
-        player.update();
-    }
+
+    player.startTimer(1);
+    player.update();
 }
 
 void TestState::exit(Player& player) {
-    if(mode == TEST_MODE_BREATHING) {
-        player.stopTimer();
-    }
+    player.stopTimer();
 
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Exit Test!");
@@ -193,18 +185,10 @@ void TestState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_RESET) {
         player.changeState(ResetState::getInstance());
     }
-
-    if(event.type == EVENT_TEST && event.mode == TEST_MODE_SET_RGB && mode == TEST_MODE_SET_RGB) {
-        // ESP_LOGI("handle_event", "r: %d, g: %d, b: %d", event.red, event.green, event.blue);
-        player.controller.fill(event.red, event.green, event.blue);
-        update(player);
-    }
 }
 
 void TestState::update(Player& player) {
-    if(mode == TEST_MODE_BREATHING) {
-        player.computeTestFrame(player.cur_frame_idx++);
-    }
+    player.computeTestFrame(player.cur_frame_idx++);
 
     // player.controller.print_buffer();
     player.controller.show();
@@ -212,8 +196,4 @@ void TestState::update(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");
 #endif
-}
-
-void TestState::setTestMode(TEST_MODE_t _mode) {
-    mode = _mode;
 }

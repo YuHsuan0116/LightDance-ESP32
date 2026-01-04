@@ -1,4 +1,5 @@
 #include "player.h"
+#include <math.h>
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "state.h"
@@ -157,16 +158,53 @@ void Player::resetFrameIndex() {
 }
 
 void Player::computeTestFrame(int frame_idx) {
-    uint8_t max_brightness = 15;
-    if(frame_idx % 3 == 0) {
-        controller.fill(max_brightness, 0, 0);
+    uint8_t max_brightness = 63;
+    float r = 0.0f, g = 0.0f, b = 0.0f;
+
+    float H = (frame_idx * 360 / 360) % 360;
+    float S = 1.0f;
+    float V = 0.8f + 0.2f * sinf(frame_idx * 0.05f);
+
+    float h = H / 360.0f;
+    float s = S;
+    float v = V;
+
+    int i = floor(h * 6);
+    float f = h * 6 - i;
+    float p = v * (1 - s);
+    float q = v * (1 - f * s);
+    float t = v * (1 - (1 - f) * s);
+
+    switch(i % 6) {
+        case 0:
+            r = v, g = t, b = p;
+            break;
+        case 1:
+            r = q, g = v, b = p;
+            break;
+        case 2:
+            r = p, g = v, b = t;
+            break;
+        case 3:
+            r = p, g = q, b = v;
+            break;
+        case 4:
+            r = t, g = p, b = v;
+            break;
+        case 5:
+            r = v, g = p, b = q;
+            break;
+        default:
+            break;
     }
-    if(frame_idx % 3 == 1) {
-        controller.fill(0, max_brightness, 0);
-    }
-    if(frame_idx % 3 == 2) {
-        controller.fill(0, 0, max_brightness);
-    }
+
+    uint8_t R = (uint8_t)(r * max_brightness);
+    uint8_t G = (uint8_t)(g * max_brightness);
+    uint8_t B = (uint8_t)(b * max_brightness);
+
+    // ESP_LOGI("test", "R: %d, G: %d, B: %d", R, G, B);
+
+    controller.fill(R, G, B);
 }
 
 void Player::showFrame() {

@@ -13,23 +13,9 @@ typedef enum {
     EVENT_RESET,
 } event_t;
 
-typedef enum: uint8_t {
-    TEST_MODE_SET_RGB,
-    TEST_MODE_BREATHING,
-} TEST_MODE_t;
-
 struct Event {
     event_t type;
-
-    union {
-        uint32_t data;
-        struct __attribute__((packed)) {
-            uint8_t mode;
-            uint8_t red;
-            uint8_t green;
-            uint8_t blue;
-        };
-    };
+    uint32_t data;
 };
 
 class State;

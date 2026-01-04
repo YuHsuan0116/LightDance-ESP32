@@ -53,25 +53,6 @@ static void register_sendPause(void) {
 
 static int sendTest(int argc, char** argv) {
     e.type = EVENT_TEST;
-    if(argc == 4) {
-        e.mode = TEST_MODE_SET_RGB;
-        uint32_t r = atoi(argv[1]);
-        uint32_t g = atoi(argv[2]);
-        uint32_t b = atoi(argv[3]);
-
-        if(r > 255 || g > 255 || b > 255) {
-            printf("Error: RGB values must be 0-255\n");
-            return 1;
-        }
-
-        e.red = (uint8_t)r;
-        e.green = (uint8_t)g;
-        e.blue = (uint8_t)b;
-
-    } else {
-        e.mode = TEST_MODE_BREATHING;
-    }
-    // ESP_LOGI("send_test", "r: %d, g: %d, b: %d", e.red, e.green, e.blue);
     Player::getInstance().sendEvent(e);
     return 0;
 }
