@@ -193,8 +193,7 @@ void Player::showFrame() {
 
 esp_err_t Player::allocateBuffer() {}
 esp_err_t Player::freeBuffers() {}
-esp_err_t Player::clearBuffers() {
-}
+esp_err_t Player::clearBuffers() {}
 esp_err_t Player::fillBuffers() {}
 
 // ================= Hardware Reset / Clear =================

@@ -90,6 +90,8 @@ class Player {
     void startTimer(int fps);
     void stopTimer();
 
+    uint64_t playing_start_time();
+
 
     // ================= Driver Function Implementation =================
 

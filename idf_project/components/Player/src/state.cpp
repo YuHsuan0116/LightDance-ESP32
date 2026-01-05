@@ -79,7 +79,7 @@ void ReadyState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Ready!");
 #endif
-    if (player.performHardwareClear() != ESP_OK || fillBuffers() != ESP_OK) {
+    if (player.performHardwareClear() != ESP_OK || player.fillBuffers() != ESP_OK) {
         player.changeState(ErrorState::getInstance());
     }
     player.init_retry_count = 0;
@@ -123,6 +123,7 @@ void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
     player.startTimer(10);
+    player.playing_start_time();
     player.update();
 }
 
