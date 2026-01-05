@@ -19,6 +19,7 @@ struct Event {
 };
 
 class State;
+class ErrorState;
 class ResetState;
 class ReadyState;
 class PlayingState;
@@ -43,6 +44,7 @@ class Player {
 
     // ================= Finite State Machine =================
 
+    friend class ErrorState;
     friend class ResetState;
     friend class ReadyState;
     friend class PlayingState;
@@ -54,7 +56,12 @@ class Player {
     void handleEvent(Event& event);
     void changeState(State& newState);
 
-    bool isHardwareInitialized = false; 
+    struct isHardwareInitialized {
+        bool Timer = false; 
+        bool Drivers = false;
+        bool Buffers = false;
+    };
+    
     int init_retry_count = 0;
 
     // ================= Resources =================
@@ -83,12 +90,16 @@ class Player {
 
     // ================= Driver Function Implementation =================
 
-    void initDrivers();
-    void computeTestFrame();
+    esp_err_t initDrivers();
+    esp_err_t deinitDrivers();
     void computeFrame();
+    void computeTestFrame();
     void showFrame();
-    void deinitDrivers();
-    void allocateBuffer();
-    void freeBuffers();
-    void resetFrameIndex();
+
+    // ================= Buffer Management =================
+    esp_err_t allocateBuffer();
+    esp_err_t freeBuffers();
+
+    // ================= Hardware Reset =================
+    esp_err_t performHardwareReset();
 };

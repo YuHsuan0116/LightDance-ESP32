@@ -17,6 +17,41 @@ TaskHandle_t& Player::getTaskHandle() {
     return taskHandle;
 }
 
+esp_err_t Player::performHardwareReset() {
+    if (isHardwareInitialized.Timer) {
+        if (deinitTimer() != ESP_OK) ESP_LOGW("Reset", "Deinit Timer Failed");
+        isHardwareInitialized.Timer = false;
+    }
+    if (isHardwareInitialized.Drivers) {
+        if (deinitDrivers() != ESP_OK) ESP_LOGW("Reset", "Deinit Drivers Failed");
+        isHardwareInitialized.Drivers = false;
+    }
+    if (isHardwareInitialized.Buffers) {
+        if (freeBuffers() != ESP_OK) ESP_LOGW("Reset", "Free Buffers Failed");
+        isHardwareInitialized.Buffers = false;
+    }
+
+    if (initTimer() != ESP_OK) {
+        ESP_LOGE("Reset", "Init Timer Failed!");
+        return ESP_FAIL;
+    }
+    isHardwareInitialized.Timer = true;
+
+    if (initDrivers() != ESP_OK) {
+        ESP_LOGE("Reset", "Init Drivers Failed!");
+        return ESP_FAIL;
+    }
+    isHardwareInitialized.Drivers = true;
+
+    if (allocateBuffer() != ESP_OK) {
+        ESP_LOGE("Reset", "Alloc Buffer Failed!");
+        return ESP_FAIL;
+    }
+    isHardwareInitialized.Buffers = true;
+
+    return ESP_OK;
+}
+
 void Player::sendEvent(Event& event) {
     xQueueSend(eventQueue, &event, 1000);
     xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
@@ -96,7 +131,7 @@ static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_
     return false;
 }
 
-void Player::initTimer() {
+esp_err_t Player::initTimer() {
     gptimer_config_t timer_config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,  // Select the default clock source
         .direction = GPTIMER_COUNT_UP,       // Counting direction is up
@@ -111,6 +146,8 @@ void Player::initTimer() {
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
 
     gptimer_enable(gptimer);
+
+    return ESP_OK;
 }
 
 void Player::startTimer(int fps) {
@@ -130,12 +167,13 @@ void Player::stopTimer() {
     gptimer_stop(gptimer);
 }
 
-void Player::deinitTimer() {
+esp_err_t Player::deinitTimer() {
     gptimer_disable(gptimer);
     gptimer_del_timer(gptimer);
+    return ESP_OK;
 }
 
-void Player::initDrivers() {
+esp_err_t Player::initDrivers() {
     for(int i = 0; i < WS2812B_NUM; i++) {
         ch_info.rmt_strips[i] = 100;
     }
@@ -144,11 +182,14 @@ void Player::initDrivers() {
     }
 
     controller.init(ch_info);
+    return ESP_OK;
 }
 
-void Player::deinitDrivers() {
+esp_err_t Player::deinitDrivers() {
     controller.deinit();
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    return ESP_OK;
 }
 
 void Player::computeTestFrame() {
