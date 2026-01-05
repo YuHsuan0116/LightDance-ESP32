@@ -61,7 +61,12 @@ class Player {
 
     LedController controller;
     ch_info_t ch_info;
-    uint8_t** buffers;
+    uint8_t** buffers = nullptr;
+
+    // Playing State
+    table_frame_t* current = nullptr;
+    table_frame_t* next = nullptr;
+    uint64_t playing_start_time = 0;
 
     int cur_frame_idx;
     TaskHandle_t taskHandle;
@@ -83,11 +88,21 @@ class Player {
     // ================= Driver Function Implementation =================
 
     void initDrivers();
-    void computeTestFrame();
-    void computeFrame();
-    void showFrame();
     void deinitDrivers();
-    void allocateBuffer();
+
+    void computeTestFrame();
+    table_frame_t* readFrame();
+    void computeFrame();
+    void currentToBuffers();
+    void buffersToController();
+    void showFrame();
+
+    void allocateBuffers();
     void freeBuffers();
+    void fillBuffers();
+
+    void generateFrames();
+    void freeFrames();
+
     void resetFrameIndex();
 };

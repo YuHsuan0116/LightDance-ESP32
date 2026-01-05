@@ -1,5 +1,6 @@
 #include "state.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 // ================= ResetState =================
 
@@ -14,8 +15,8 @@ void ResetState::enter(Player& player) {
 #endif
     player.deinitTimer();
     player.deinitDrivers();
-    // player.freeBuffers()
-
+    player.freeBuffers();
+    player.freeFrames();
     player.changeState(ReadyState::getInstance());
 }
 
@@ -48,8 +49,11 @@ void ReadyState::enter(Player& player) {
 
     player.initTimer();
     player.initDrivers();
-    // player.allocateBuffers();
+    player.allocateBuffers();
+    player.generateFrames();
     player.resetFrameIndex();
+    player.fillBuffers();
+    player.showFrame();
     vTaskDelay(pdMS_TO_TICKS(1));
 }
 
@@ -92,9 +96,8 @@ void PlayingState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
-
+    player.playing_start_time = (uint64_t)(esp_timer_get_time() / 1000ULL);
     player.startTimer(10);
-    player.update();
 }
 
 void PlayingState::exit(Player& player) {
@@ -114,12 +117,8 @@ void PlayingState::handleEvent(Player& player, Event& event) {
     }
 }
 void PlayingState::update(Player& player) {
-    // player.computeFrame();
-    // player.showFrame();
-
-    player.cur_frame_idx++;
-    player.computeTestFrame();
-    player.controller.show();
+    player.showFrame();
+    player.computeFrame();
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");
 #endif
