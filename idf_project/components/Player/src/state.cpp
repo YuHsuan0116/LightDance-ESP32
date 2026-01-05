@@ -79,6 +79,9 @@ void ReadyState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Ready!");
 #endif
+    if (player.performHardwareClear() != ESP_OK || fillBuffers() != ESP_OK) {
+        player.changeState(ErrorState::getInstance());
+    }
     player.init_retry_count = 0;
 
     vTaskDelay(pdMS_TO_TICKS(1));
@@ -99,12 +102,8 @@ void ReadyState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_TEST) {
         player.changeState(TestState::getInstance());
     }
-    if(event.type == EVENT_RESET && event.data == 0) {
+    if(event.type == EVENT_RESET) {
         player.changeState(ResetState::getInstance());
-    }
-    if(event.type == EVENT_RESET && event.data == 1) {
-        player.deinitTimer();
-        player.deinitDrivers();
     }
 }
 void ReadyState::update(Player& player) {
@@ -123,7 +122,6 @@ void PlayingState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
-
     player.startTimer(10);
     player.update();
 }
@@ -140,16 +138,17 @@ void PlayingState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_PAUSE) {
         player.changeState(PauseState::getInstance());
     }
+    if(event.type == EVENT_READY) {
+        player.changeState(ReadyState::getInstance());
+    }
     if(event.type == EVENT_RESET) {
         player.changeState(ResetState::getInstance());
     }
 }
 void PlayingState::update(Player& player) {
-    // player.computeFrame();
-    // player.showFrame();
+    player.computeFrame();
+    player.showFrame();
 
-    player.computeTestFrame();
-    player.controller.show();
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");
 #endif
@@ -166,8 +165,8 @@ void PauseState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Pause!");
 #endif
+    player.showFrame();
 
-    // Do nothing
 }
 void PauseState::exit(Player& player) {
     // Do nothing
@@ -179,6 +178,12 @@ void PauseState::exit(Player& player) {
 void PauseState::handleEvent(Player& player, Event& event) {
     if(event.type == EVENT_PLAY) {
         player.changeState(PlayingState::getInstance());
+    }
+    if(event.type == EVENT_TEST) {
+        player.changeState(TestState::getInstance());
+    }
+    if(event.type == EVENT_READY) {
+        player.changeState(ReadyState::getInstance());
     }
     if(event.type == EVENT_RESET) {
         player.changeState(ResetState::getInstance());
@@ -200,7 +205,7 @@ void TestState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Test!");
 #endif
 
-    player.startTimer(1);
+    player.startTimer(10);
     player.update();
 }
 
@@ -213,6 +218,12 @@ void TestState::exit(Player& player) {
 }
 
 void TestState::handleEvent(Player& player, Event& event) {
+    if(event.type == EVENT_PAUSE) {
+        player.changeState(PauseState::getInstance());
+    }
+    if(event.type == EVENT_READY) {
+        player.changeState(ReadyState::getInstance());
+    }
     if(event.type == EVENT_RESET) {
         player.changeState(ResetState::getInstance());
     }
@@ -220,7 +231,6 @@ void TestState::handleEvent(Player& player, Event& event) {
 
 void TestState::update(Player& player) {
     player.computeTestFrame();
-
     player.controller.show();
 
 #if SHOW_TRANSITION

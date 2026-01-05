@@ -83,15 +83,20 @@ class Player {
 
     // ================= Timer Function Implementation =================
 
-    void initTimer();
+    esp_err_t initTimer();
+    esp_err_t deinitTimer();
+
+    esp_err_t clearTimer();
     void startTimer(int fps);
     void stopTimer();
-    void deinitTimer();
+
 
     // ================= Driver Function Implementation =================
 
     esp_err_t initDrivers();
     esp_err_t deinitDrivers();
+
+    esp_err_t clearDrivers();
     void computeFrame();
     void computeTestFrame();
     void showFrame();
@@ -100,6 +105,11 @@ class Player {
     esp_err_t allocateBuffer();
     esp_err_t freeBuffers();
 
-    // ================= Hardware Reset =================
+    esp_err_t clearBuffers();
+    esp_err_t fillBuffers();
+
+
+    // ================= Hardware Reset / Clear =================
     esp_err_t performHardwareReset();
+    esp_err_t performHardwareClear();
 };
