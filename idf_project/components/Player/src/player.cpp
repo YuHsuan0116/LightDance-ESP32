@@ -52,11 +52,11 @@ void Player::Loop() {
 
     while(1) {
         if(xTaskNotifyWait(0, 0xFFFFFFFF, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
-            uint64_t start = esp_timer_get_time();
+            // uint64_t start = esp_timer_get_time();
             if((ulNotifiedValue & NOTIFICATION_UPDATE) != 0) {
                 // ESP_LOGI("player.cpp", "Notified!");
                 update();
-                uint64_t end = esp_timer_get_time();
+                // uint64_t end = esp_timer_get_time();
                 // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
             }
             if((ulNotifiedValue & NOTIFICATION_EVENT) != 0) {
@@ -105,6 +105,8 @@ esp_err_t Player::initTimer() {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,  // Select the default clock source
         .direction = GPTIMER_COUNT_UP,       // Counting direction is up
         .resolution_hz = 1 * 1000 * 1000,    // Resolution is 1 MHz, i.e., 1 tick equals 1 microsecond
+        .intr_priority = 0,                  // Use default interrupt priority
+        .flags = {},
     };
 
     gptimer_new_timer(&timer_config, &gptimer);
@@ -119,7 +121,7 @@ esp_err_t Player::initTimer() {
     return ESP_OK;
 }
 esp_err_t Player::clearTimer() {
-    gptimer_set_count(gptimer, 0);
+    gptimer_set_raw_count(gptimer, 0);
     return ESP_OK;
 }
 void Player::startTimer(int fps) {
@@ -173,6 +175,8 @@ esp_err_t Player::deinitDrivers() {
 
 void Player::computeTestFrame() {
     uint8_t max_brightness = 15;
+    static int cur_frame_idx = 0;
+    cur_frame_idx++;
     if(cur_frame_idx % 3 == 0) {
         controller.fill(max_brightness, 0, 0);
     }
@@ -191,10 +195,6 @@ void Player::showFrame() {
 
 // ================= Buffer Management =================
 
-esp_err_t Player::allocateBuffer() {}
-esp_err_t Player::freeBuffers() {}
-esp_err_t Player::clearBuffers() {}
-esp_err_t Player::fillBuffers() {}
 
 // ================= Hardware Reset / Clear =================
 
@@ -244,7 +244,7 @@ esp_err_t Player::performHardwareClear() {
         return ESP_FAIL;
     }
 
-    if (clearBuffer() != ESP_OK) {
+    if (clearBuffers() != ESP_OK) {
         ESP_LOGW("Reset", "Clear Buffer Failed!");
         return ESP_FAIL;
     }

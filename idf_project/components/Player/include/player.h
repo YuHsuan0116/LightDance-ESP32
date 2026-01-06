@@ -56,11 +56,11 @@ class Player {
     void handleEvent(Event& event);
     void changeState(State& newState);
 
-    struct isHardwareInitialized {
+    struct  {
         bool Timer = false; 
         bool Drivers = false;
         bool Buffers = false;
-    };
+    } isHardwareInitialized;
     
     int init_retry_count = 0;
 

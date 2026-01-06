@@ -19,7 +19,6 @@ static esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT()
 
 static int sendPlay(int argc, char** argv) {
     e.type = EVENT_PLAY;
-    e.data = 0;
     Player::getInstance().sendEvent(e);
     return 0;
 }
@@ -36,7 +35,6 @@ static void register_sendPlay(void) {
 
 static int sendPause(int argc, char** argv) {
     e.type = EVENT_PAUSE;
-    e.data = 0;
     Player::getInstance().sendEvent(e);
     return 0;
 }
@@ -53,7 +51,6 @@ static void register_sendPause(void) {
 
 static int sendTest(int argc, char** argv) {
     e.type = EVENT_TEST;
-    e.data = 0;
     Player::getInstance().sendEvent(e);
     return 0;
 }
@@ -70,7 +67,6 @@ static void register_sendTest(void) {
 
 static int sendReset(int argc, char** argv) {
     e.type = EVENT_RESET;
-    e.data = 0;
     Player::getInstance().sendEvent(e);
     return 0;
 }
@@ -87,7 +83,6 @@ static void register_sendReset(void) {
 
 static int sendExit(int argc, char** argv) {
     e.type = EVENT_RESET;
-    e.data = 1;
     Player::getInstance().sendEvent(e);
     return 0;
 }
