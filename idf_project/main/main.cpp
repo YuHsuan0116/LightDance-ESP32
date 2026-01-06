@@ -6,9 +6,11 @@
 extern "C" void app_main();
 
 void app_main() {
-    Player::getInstance().start();
+    // Player::getInstance().start();
 
-    start_console();
+    // start_console();
     // ws2812b_test2();
     // pca9955b_test2();
+
+    Controller_test();
 }

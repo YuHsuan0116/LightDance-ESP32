@@ -168,8 +168,12 @@ esp_err_t ws2812b_show(ws2812b_handle_t ws2812b) {
 
 esp_err_t ws2812b_del(ws2812b_handle_t* ws2812b) {
     // 1. Validate Pointer
-    if(ws2812b == NULL || *ws2812b == NULL) {
+    if(ws2812b == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if(*ws2812b == NULL) {
+        return ESP_OK;
     }
 
     ws2812b_dev_t* dev = *ws2812b;

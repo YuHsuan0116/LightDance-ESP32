@@ -154,11 +154,15 @@ esp_err_t pca9955b_show(pca9955b_handle_t pca9955b) {
 }
 
 esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b) {
-    if(pca9955b == NULL || *pca9955b == NULL) {
-        return ESP_OK; /*!< Nothing to delete */
+    if(pca9955b == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(*pca9955b == NULL) {
+        return ESP_OK;
     }
 
     pca9955b_dev_t* dev = *pca9955b; /*!< Local device pointer */
+    uint8_t i2c_addr = dev->i2c_addr;
 
     // 1. Turn off all LEDs (Safety feature)
     // Clear the data payload
@@ -181,7 +185,7 @@ esp_err_t pca9955b_del(pca9955b_handle_t* pca9955b) {
     // 4. Invalidate Handle
     *pca9955b = NULL;
 
-    ESP_LOGI(TAG, "PCA9955B deinitialized");
+    ESP_LOGI(TAG, "PCA9955B at address 0x%02x deinitialized", i2c_addr);
     return ESP_OK;
 }
 

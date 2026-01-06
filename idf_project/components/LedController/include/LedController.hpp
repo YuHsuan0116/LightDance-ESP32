@@ -4,7 +4,7 @@
 #include "pca9955b_hal.h"
 #include "ws2812b_hal.h"
 
-#define SHOW_TIME_PER_FRAME false
+#define SHOW_TIME_PER_FRAME 0
 
 class LedController {
   public:
@@ -12,15 +12,11 @@ class LedController {
     ~LedController();
 
     esp_err_t init(ch_info_t);
-    esp_err_t write_buffer(uint8_t**);
+    esp_err_t write_buffer(int ch_idx, uint8_t* data);
     esp_err_t show();
     esp_err_t deinit();
 
-    esp_err_t config_test();
-    esp_err_t ch_write_buffer(int, uint8_t*);
-    esp_err_t dev_write_buffer(int, uint8_t*);
     esp_err_t fill(uint8_t, uint8_t, uint8_t);
-    esp_err_t clear_buffer();
     esp_err_t black_out();
 
     void print_buffer();
@@ -31,7 +27,6 @@ class LedController {
     pca9955b_handle_t pca9955b_devs[PCA9955B_NUM];
 
     ch_info_t ch_info;
-    uint8_t* buffer_entrance[WS2812B_NUM + PCA9955B_CH_NUM];
 };
 
 void Controller_test();
