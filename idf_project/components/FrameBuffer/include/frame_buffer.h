@@ -32,7 +32,6 @@ public:
     ~FrameBuffer();
     void allocateBuffers(const uint16_t* pixel_counts, int num_channels);
     void freeBuffers();
-    void generateTestPattern();
     bool compute(uint64_t relative_time_ms);
     uint8_t** getRawBuffers() const { return buffers; }
     void reset();
@@ -50,6 +49,9 @@ private:
 
     // --- 內部工具函式 ---
     table_frame_t* readFrame();     // 讀取下一幀
+    void freeFrames();
     void currentToBuffers();        // 將 current 填入 buffers
-    void freeFrames();              // 釋放靜態測試資料
+
+    void generateTestPattern();     // 產生測試光表
+    
 };

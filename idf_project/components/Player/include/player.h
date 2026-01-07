@@ -5,6 +5,7 @@
 #include "freertos/queue.h"
 
 #include "LedController.hpp"
+#include "frame_buffer.h"
 
 typedef enum {
     EVENT_PLAY,
@@ -58,9 +59,9 @@ class Player {
     void changeState(State& newState);
 
     struct {
-        bool Timer = false;
-        bool Drivers = false;
-        bool Buffers = false;
+        bool Timer;
+        bool Drivers;
+        bool Buffers;
     } isHardwareInitialized;
 
     int init_retry_count = 0;
@@ -68,8 +69,8 @@ class Player {
     // ================= Resources =================
 
     gptimer_handle_t gptimer;
-
     LedController controller;
+    FrameBuffer frameBuffer;
     ch_info_t ch_info;
     uint8_t** buffers;
 
@@ -86,31 +87,34 @@ class Player {
 
     esp_err_t initTimer();
     esp_err_t deinitTimer();
-
     esp_err_t clearTimer();
     void startTimer(int fps);
     void stopTimer();
 
-    uint64_t playing_start_time();
+    uint64_t playing_start_time;
 
     // ================= Driver Function Implementation =================
 
     esp_err_t initDrivers();
     esp_err_t deinitDrivers();
-
     esp_err_t clearDrivers();
-    void computeFrame();
-    void computeTestFrame();
-    void showFrame();
+    
 
-    // ================= Buffer Management =================
-    esp_err_t allocateBuffer();
+    // ================= Frame Buffer Management =================
+    
+    esp_err_t allocateBuffers();
     esp_err_t freeBuffers();
-
     esp_err_t clearBuffers();
     esp_err_t fillBuffers();
 
+    void buffersToController();
+    void getStartTime();
+    bool computeFrame();
+    void computeTestFrame();
+    void showFrame();
+
     // ================= Hardware Reset / Clear =================
+
     esp_err_t performHardwareReset();
     esp_err_t performHardwareClear();
 };

@@ -12,10 +12,7 @@
 #include "BoardConfig.h" 
 
 // 定義 TAG 供 Log 使用
-static const char* TAG = "FrameBuffer";
-
-// 假設 BoardConfig.h 裡有定義 WS2812B_NUM 和 PCA9955B_CH_NUM
-static constexpr int TOTAL_CH = WS2812B_NUM + PCA9955B_CH_NUM;
+static const char* TAG = "FrameBuffer.cpp";
 
 // 其他與硬體無關的常數
 static constexpr int MAX_FRAMES = 61;

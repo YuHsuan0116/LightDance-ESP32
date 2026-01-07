@@ -5,6 +5,6 @@ idf_component_register(
 
     PRIV_INCLUDE_DIRS "src"
 
-    REQUIRES LedController driver esp_driver_gptimer
+    REQUIRES LedController log
 
 )

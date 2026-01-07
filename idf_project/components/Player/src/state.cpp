@@ -122,7 +122,7 @@ void PlayingState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
     player.startTimer(10);
-    player.playing_start_time();
+    player.getStartTime();
     player.update();
 }
 
@@ -146,8 +146,10 @@ void PlayingState::handleEvent(Player& player, Event& event) {
     }
 }
 void PlayingState::update(Player& player) {
-    player.computeFrame();
     player.showFrame();
+    if(!player.computeFrame()){
+        player.changeState(ReadyState::getInstance());
+    }
 
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");
@@ -205,6 +207,7 @@ void TestState::enter(Player& player) {
 #endif
 
     player.startTimer(10);
+    player.getStartTime();
     player.update();
 }
 
@@ -229,8 +232,9 @@ void TestState::handleEvent(Player& player, Event& event) {
 }
 
 void TestState::update(Player& player) {
+    player.showFrame();
     player.computeTestFrame();
-    player.controller.show();
+
 
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");

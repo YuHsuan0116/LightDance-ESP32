@@ -1,13 +1,22 @@
 #include "player.h"
 #include <math.h>
+#include <cstring>
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "state.h"
+#include "BoardConfig.h"
 
 #define NOTIFICATION_UPDATE (1 << 0)
 #define NOTIFICATION_EVENT (1 << 1)
 
-Player::Player() {}
+// ================= Player Implementation =================
+
+Player::Player() {
+    isHardwareInitialized.Timer = false;
+    isHardwareInitialized.Drivers = false;
+    isHardwareInitialized.Buffers = false;
+    playing_start_time = 0;
+}
 
 Player& Player::getInstance() {
     static Player player;
@@ -93,6 +102,8 @@ void Player::changeState(State& newState) {
     currentState->enter(*this);
 }
 
+// ================= Timer Function Implementation =================
+
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_ctx) {
     Player& player = Player::getInstance();
     xTaskNotify(player.getTaskHandle(), NOTIFICATION_UPDATE, eSetBits);
@@ -168,10 +179,77 @@ esp_err_t Player::clearDrivers() {
 esp_err_t Player::deinitDrivers() {
     controller.deinit();
     vTaskDelay(pdMS_TO_TICKS(100));
+    return ESP_OK;
+}
+
+// ================= Frame Buffer Management =================
+
+    esp_err_t Player::allocateBuffers() {
+        frameBuffer.allocateBuffers(ch_info.pixel_counts, TOTAL_CH);
+        // frameBuffer.generateTestPattern();
+        if (frameBuffer.getRawBuffers() == nullptr) {
+            ESP_LOGI("Player.cpp", "FrameBuffer allocation failed!");
+            return ESP_FAIL;
+        }
+        return ESP_OK;
+    }
+
+    esp_err_t Player::freeBuffers() {
+        frameBuffer.freeBuffers();
+        ESP_LOGI("Player.cpp", "Buffers freed.");
+        return ESP_OK;
+    }
+
+    esp_err_t Player::clearBuffers() {
+        uint8_t** raw_buffers = frameBuffer.getRawBuffers();
+        if (raw_buffers == nullptr) return ESP_FAIL;
+        for (int ch = 0; ch < TOTAL_CH; ch++) {
+            if (raw_buffers[ch] != nullptr) {
+                memset(raw_buffers[ch], 0, ch_info.pixel_counts[ch] * 3);
+            }
+    }
+
+    buffersToController();
+    controller.show(); 
+
+    return ESP_OK;
+    }
+
+    esp_err_t Player::fillBuffers() {
+        frameBuffer.compute(0); 
+        if (frameBuffer.getRawBuffers() != nullptr) {
+            buffersToController();
+            return ESP_OK;
+        }
+        return ESP_FAIL;
+    }
+
+void Player::buffersToController() {
+    uint8_t** rawbuffers = frameBuffer.getRawBuffers();
+    if (!rawbuffers) return;
+    for (int ch = 0; ch < TOTAL_CH; ch++) {
+        if (!rawbuffers[ch]) continue;
+        controller.write_buffer(ch, rawbuffers[ch]);
+    }
+}
+
+void Player::getStartTime() {
+    playing_start_time = (uint64_t)(esp_timer_get_time() / 1000ULL);
+    // ESP_LOGI("Player", "Start playing at system time: %llu ms", playing_start_time);
+}
+
+bool Player::computeFrame() {
+    uint64_t now_ms = (uint64_t)(esp_timer_get_time() / 1000ULL);
+    uint64_t t_ms = (now_ms >= playing_start_time) 
+                    ? (now_ms - playing_start_time) 
+                    : 0;
+    bool is_playing = frameBuffer.compute(t_ms);
+    
+    buffersToController();
+    return is_playing;
 }
 
 static int frame_idx = 0;
-
 void Player::computeTestFrame() {
 
     uint8_t max_brightness = 63;
@@ -224,11 +302,8 @@ void Player::computeTestFrame() {
 }
 
 void Player::showFrame() {
-    // controller.print_buffer();
     controller.show();
 }
-
-// ================= Buffer Management =================
 
 // ================= Hardware Reset / Clear =================
 
@@ -261,7 +336,7 @@ esp_err_t Player::performHardwareReset() {
     }
     isHardwareInitialized.Drivers = true;
 
-    if(allocateBuffer() != ESP_OK) {
+    if(allocateBuffers() != ESP_OK) {
         ESP_LOGW("Reset", "Alloc Buffer Failed!");
         return ESP_FAIL;
     }
