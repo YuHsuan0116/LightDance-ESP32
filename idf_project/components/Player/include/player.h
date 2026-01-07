@@ -8,9 +8,10 @@
 
 typedef enum {
     EVENT_PLAY,
-    EVENT_PAUSE,
     EVENT_TEST,
+    EVENT_PAUSE,
     EVENT_RESET,
+    EVENT_READY,
 } event_t;
 
 struct Event {
@@ -19,6 +20,7 @@ struct Event {
 };
 
 class State;
+class ErrorState;
 class ResetState;
 class ReadyState;
 class PlayingState;
@@ -43,6 +45,7 @@ class Player {
 
     // ================= Finite State Machine =================
 
+    friend class ErrorState;
     friend class ResetState;
     friend class ReadyState;
     friend class PlayingState;
@@ -54,6 +57,14 @@ class Player {
     void handleEvent(Event& event);
     void changeState(State& newState);
 
+    struct {
+        bool Timer = false;
+        bool Drivers = false;
+        bool Buffers = false;
+    } isHardwareInitialized;
+
+    int init_retry_count = 0;
+
     // ================= Resources =================
 
     gptimer_handle_t gptimer;
@@ -62,7 +73,6 @@ class Player {
     ch_info_t ch_info;
     uint8_t** buffers;
 
-    int cur_frame_idx;
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
 
@@ -74,19 +84,33 @@ class Player {
 
     // ================= Timer Function Implementation =================
 
-    void initTimer();
+    esp_err_t initTimer();
+    esp_err_t deinitTimer();
+
+    esp_err_t clearTimer();
     void startTimer(int fps);
     void stopTimer();
-    void deinitTimer();
+
+    uint64_t playing_start_time();
 
     // ================= Driver Function Implementation =================
 
-    void initDrivers();
-    void computeTestFrame(int frame_idx);
+    esp_err_t initDrivers();
+    esp_err_t deinitDrivers();
+
+    esp_err_t clearDrivers();
     void computeFrame();
+    void computeTestFrame();
     void showFrame();
-    void deinitDrivers();
-    void allocateBuffer();
-    void freeBuffers();
-    void resetFrameIndex();
+
+    // ================= Buffer Management =================
+    esp_err_t allocateBuffer();
+    esp_err_t freeBuffers();
+
+    esp_err_t clearBuffers();
+    esp_err_t fillBuffers();
+
+    // ================= Hardware Reset / Clear =================
+    esp_err_t performHardwareReset();
+    esp_err_t performHardwareClear();
 };
