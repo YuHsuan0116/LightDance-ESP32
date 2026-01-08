@@ -4,30 +4,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm> // for std::max, std::min
+#include "BoardConfig.h" // for TOTAL_CH
 
-// =========================================================
-// 1. 引用硬體設定 
-// =========================================================
-
-#include "BoardConfig.h" 
-
-// 定義 TAG 供 Log 使用
 static const char* TAG = "FrameBuffer.cpp";
 
-// 其他與硬體無關的常數
+// 與 BoardConfig.h 無關的常數
 static constexpr int MAX_FRAMES = 61;
 static constexpr uint64_t FRAME_PERIOD = 500; // ms
 static constexpr uint8_t BRIGHTNESS = 255;
 
-// =========================================================
-// 2. 靜態變數 (內部資料池)
-// =========================================================
 static pixel_t* s_color_data[4][TOTAL_CH];     // [color][ch] -> pixel_t[n] or nullptr
-static table_frame_t s_frame_pool[MAX_FRAMES]; // 預先配置好的影格池
+static table_frame_t s_frame_pool[MAX_FRAMES];
 
-// =========================================================
-// 3. 數學運算工具 (Helper Functions)
-// =========================================================
+// ================= Helper Functions ============================
 
 // 限制範圍 0.0 ~ 1.0
 static inline float clamp01(float x) {
@@ -36,7 +25,7 @@ static inline float clamp01(float x) {
     return x;
 }
 
-// 浮點數轉 0-255 整數
+// float 轉 0-255 整數
 static inline uint8_t f_to_u8(float x01) {
     x01 = clamp01(x01);
     float y = x01 * 255.0f + 0.5f;
@@ -86,7 +75,7 @@ static inline void hsv_to_rgb(float h_deg, float s, float v, float& r, float& g,
     b = bp + m;
 }
 
-// 色相(Hue)最短路徑插值
+// 色相最短路徑插值
 static inline float lerp_hue_short(float h1, float h2, float p) {
     h1 = fmodf(h1, 360.0f); if (h1 < 0.0f) h1 += 360.0f;
     h2 = fmodf(h2, 360.0f); if (h2 < 0.0f) h2 += 360.0f;
@@ -99,9 +88,7 @@ static inline float lerp_hue_short(float h1, float h2, float p) {
     return h;
 }
 
-// =========================================================
-// 4. FrameBuffer 類別實作
-// =========================================================
+// =================== FrameBuffer ============================
 
 FrameBuffer::FrameBuffer() {
     reset();
@@ -109,7 +96,7 @@ FrameBuffer::FrameBuffer() {
 
 FrameBuffer::~FrameBuffer() {
     freeBuffers();
-    freeFrames(); // 也要記得釋放測試資料
+    freeFrames(); 
 }
 
 void FrameBuffer::reset() {
@@ -119,11 +106,11 @@ void FrameBuffer::reset() {
 }
 
 void FrameBuffer::allocateBuffers(const uint16_t* pixel_counts, int num_channels) {
-    // 保存外部傳入的像素計數陣列 (Player::ch_info.pixel_counts)
+
     this->ch_pixel_counts = pixel_counts;
     this->total_channels = num_channels;
 
-    // 防呆檢查：如果 Config 和傳入參數不一致，印出警告
+    // 如果 Config 和傳入參數不一致，印出警告
     if (num_channels != TOTAL_CH) {
         ESP_LOGW(TAG, "Channel count mismatch! Config: %d, Arg: %d", TOTAL_CH, num_channels);
     }
@@ -186,7 +173,7 @@ table_frame_t* FrameBuffer::readFrame() {
 void FrameBuffer::currentToBuffers() {
     if (!buffers || !current) return;
     for (int ch = 0; ch < TOTAL_CH; ch++) {
-        const int n = ch_pixel_counts[ch]; // 使用儲存的像素計數
+        const int n = ch_pixel_counts[ch];
         uint8_t* out = buffers[ch];
         pixel_t* src = (current->data) ? current->data[ch] : nullptr;
         
@@ -200,15 +187,16 @@ void FrameBuffer::currentToBuffers() {
     }
 }
 
-// 核心計算：回傳 true 代表繼續播放，false 代表結束
+// 回傳 true 代表繼續播放，false 代表結束
 bool FrameBuffer::compute(uint64_t t_ms) {
-    // 初始化或第一次讀取
+
+    // 第一次讀取
     if (current == nullptr) {
         current = readFrame();
         next = readFrame();
     }
 
-    // 掉幀補償 (Skip frames)
+    // Skip frames
     while (next != nullptr && t_ms >= next->timestamp) {
         current = next;
         next = readFrame();
@@ -217,16 +205,16 @@ bool FrameBuffer::compute(uint64_t t_ms) {
     // 結束條件
     if (next == nullptr) {
         currentToBuffers();
-        return false; // 播放結束
+        return false;
     }
 
-    // 如果不需要漸變，直接填入當前顏色 (fade == 0)
+    // 不需漸變(fade == 0)
     if (!current->fade) {
         currentToBuffers();
         return true;
     }
 
-    // HSV 漸變計算 (fade == 1)
+    // 漸變計算 (fade == 1)
     const uint64_t t1 = current->timestamp;
     const uint64_t t2 = next->timestamp;
     float p = 0.0f;
@@ -240,7 +228,6 @@ bool FrameBuffer::compute(uint64_t t_ms) {
         p = 1.0f;
     }
 
-    // 對每個通道、每個燈珠進行插值
     for (int ch = 0; ch < TOTAL_CH; ch++) {
         const int n = ch_pixel_counts[ch];
         uint8_t* out = buffers[ch];
@@ -273,18 +260,18 @@ bool FrameBuffer::compute(uint64_t t_ms) {
             float rr, gg, bb;
             hsv_to_rgb(h, s, v, rr, gg, bb);
 
-            // 寫入 Buffer (注意 GRB 順序)
+            // 寫入 Buffer 
             out[3 * pix + 0] = f_to_u8(gg);
             out[3 * pix + 1] = f_to_u8(rr);
             out[3 * pix + 2] = f_to_u8(bb);
         }
     }
     
-    return true; // 繼續播放
+    return true;
 }
 
 
-// 產生測試資料 (包含 Fade 邏輯設定)
+// 產生測試資料
 void FrameBuffer::generateTestPattern() {
     auto is_fade_frame = [](int i0) -> bool {
         switch (i0) {

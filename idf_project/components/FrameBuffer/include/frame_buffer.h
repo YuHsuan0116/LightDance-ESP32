@@ -4,27 +4,23 @@
 #include <stdbool.h>
 #include <stddef.h> // for size_t
 
-// ==========================================
-// 資料結構定義 (Data Structures)
-// ==========================================
+// ============= Data Structures ===============
 
-// 定義單一顆燈的顏色 (GRB)
+// GRB
 typedef struct {
     uint8_t green;
     uint8_t red;
     uint8_t blue;
 } pixel_t;
 
-// 定義一個影格 (Keyframe)
+// Keyframe
 typedef struct {
-    uint64_t timestamp; // 相對時間 (ms)
-    bool fade;          // 是否需要漸變到下一幀
-    pixel_t** data;     // 顏色資料指標 data[ch][pixel]
+    uint64_t timestamp; // ms
+    bool fade;         
+    pixel_t** data;     // data[ch][pixel]
 } table_frame_t;
 
-// ==========================================
-// FrameBuffer 類別定義
-// ==========================================
+// ============= FrameBuffer Class ===============
 
 class FrameBuffer {
 public:
@@ -38,9 +34,9 @@ public:
 
 private:
     // --- 內部變數 ---
-    uint8_t** buffers = nullptr; // 最終輸出的緩衝區 [ch][byte_index]
+    uint8_t** buffers = nullptr; // [ch][byte_index]
     int total_channels = 0;
-    const uint16_t* ch_pixel_counts = nullptr; // 儲存外部傳入的像素數量資訊
+    const uint16_t* ch_pixel_counts = nullptr; // 儲存外部傳入的像素數量
 
     // --- 播放狀態 ---
     int cur_frame_idx = -1;
@@ -48,9 +44,9 @@ private:
     table_frame_t* next = nullptr;
 
     // --- 內部工具函式 ---
-    table_frame_t* readFrame();     // 讀取下一幀
+    table_frame_t* readFrame();   
     void freeFrames();
-    void currentToBuffers();        // 將 current 填入 buffers
+    void currentToBuffers();       
 
     void generateTestPattern();     // 產生測試光表
     
