@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "src/frame_buffer.cpp"
+    SRCS "src/frame_buffer.cpp" "src/color.cpp"
 
     INCLUDE_DIRS "include"
 

@@ -92,3 +92,4 @@ typedef struct {
 } ch_info_t;
 
 extern const hw_config_t BOARD_HW_CONFIG;
+extern ch_info_t ch_info;

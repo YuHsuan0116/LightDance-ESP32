@@ -168,6 +168,8 @@ esp_err_t Player::clearDrivers() {
 esp_err_t Player::deinitDrivers() {
     controller.deinit();
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    return ESP_OK;
 }
 
 static int frame_idx = 0;

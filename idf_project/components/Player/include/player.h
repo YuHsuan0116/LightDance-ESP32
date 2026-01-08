@@ -70,7 +70,6 @@ class Player {
     gptimer_handle_t gptimer;
 
     LedController controller;
-    ch_info_t ch_info;
     uint8_t** buffers;
 
     TaskHandle_t taskHandle;

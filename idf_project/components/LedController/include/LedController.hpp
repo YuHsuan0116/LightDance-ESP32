@@ -25,8 +25,6 @@ class LedController {
     i2c_master_bus_handle_t bus_handle;
     ws2812b_handle_t ws2812b_devs[WS2812B_NUM];
     pca9955b_handle_t pca9955b_devs[PCA9955B_NUM];
-
-    ch_info_t ch_info;
 };
 
 void Controller_test();

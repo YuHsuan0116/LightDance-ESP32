@@ -19,3 +19,5 @@ const hw_config_t BOARD_HW_CONFIG = {
     .pca9955b_6 = 0x1f,
     .pca9955b_7 = 0x20,
 };
+
+ch_info_t ch_info;
