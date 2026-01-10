@@ -73,7 +73,7 @@ class Player {
     FrameBuffer frameBuffer;
     ch_info_t ch_info;
     uint8_t** buffers;
-
+    
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
 

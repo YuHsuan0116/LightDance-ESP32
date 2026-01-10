@@ -36,7 +36,6 @@ void Player::start() {
     eventQueue = xQueueCreate(50, sizeof(Event));
     currentState = &ResetState::getInstance();
     // ch_info = get_ch_info();
-
     createTask();
 }
 
