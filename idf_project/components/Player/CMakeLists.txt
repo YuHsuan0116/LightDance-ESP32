@@ -3,5 +3,9 @@ idf_component_register(
 
     INCLUDE_DIRS "include"
 
+<<<<<<< HEAD
     REQUIRES LedController driver esp_driver_gptimer Player
+=======
+    REQUIRES LedController FrameBuffer driver esp_driver_gptimer
+>>>>>>> origin/merge-test
 )

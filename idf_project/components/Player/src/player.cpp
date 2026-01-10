@@ -1,13 +1,23 @@
 #include "player.h"
 #include <math.h>
+#include <cstring>
+#include "BoardConfig.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "state.h"
 
+
 #define NOTIFICATION_UPDATE (1 << 0)
 #define NOTIFICATION_EVENT (1 << 1)
 
-Player::Player() {}
+// ================= Player Implementation =================
+
+Player::Player() {
+    isHardwareInitialized.Timer = false;
+    isHardwareInitialized.Drivers = false;
+    isHardwareInitialized.Buffers = false;
+    playing_start_time = 0;
+}
 
 Player& Player::getInstance() {
     static Player player;
@@ -93,6 +103,8 @@ void Player::changeState(State& newState) {
     currentState->enter(*this);
 }
 
+// ================= Timer Function Implementation =================
+
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_ctx) {
     Player& player = Player::getInstance();
     xTaskNotify(player.getTaskHandle(), NOTIFICATION_UPDATE, eSetBits);
@@ -173,7 +185,6 @@ esp_err_t Player::deinitDrivers() {
 }
 
 static int frame_idx = 0;
-
 void Player::computeTestFrame() {
 
     uint8_t max_brightness = 63;
@@ -226,11 +237,8 @@ void Player::computeTestFrame() {
 }
 
 void Player::showFrame() {
-    // controller.print_buffer();
     controller.show();
 }
-
-// ================= Buffer Management =================
 
 // ================= Hardware Reset / Clear =================
 
@@ -263,7 +271,7 @@ esp_err_t Player::performHardwareReset() {
     }
     isHardwareInitialized.Drivers = true;
 
-    if(allocateBuffer() != ESP_OK) {
+    if(allocateBuffers() != ESP_OK) {
         ESP_LOGW("Reset", "Alloc Buffer Failed!");
         return ESP_FAIL;
     }

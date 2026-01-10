@@ -18,6 +18,11 @@
 #define PCA9955B_CH_NUM (5 * PCA9955B_NUM)
 
 /**
+ * @brief Total number of LED channels (WS2812B + PCA9955B).
+ */
+#define TOTAL_CH (WS2812B_NUM + PCA9955B_CH_NUM)
+
+/**
  * @brief I2C bus clock frequency in Hertz.
  */
 #define I2C_FREQ 400000
