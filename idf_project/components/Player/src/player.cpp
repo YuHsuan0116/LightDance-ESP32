@@ -6,7 +6,6 @@
 #include "esp_timer.h"
 #include "state.h"
 
-
 #define NOTIFICATION_UPDATE (1 << 0)
 #define NOTIFICATION_EVENT (1 << 1)
 
@@ -30,7 +29,7 @@ TaskHandle_t& Player::getTaskHandle() {
 
 void Player::sendEvent(Event& event) {
     xQueueSend(eventQueue, &event, 1000);
-    xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
+    // xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
 }
 
 void Player::start() {
@@ -62,27 +61,12 @@ void Player::Loop() {
     uint32_t ulNotifiedValue;
 
     while(1) {
-        if(xTaskNotifyWait(0, 0xFFFFFFFF, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
-            // uint64_t start = esp_timer_get_time();
-            if((ulNotifiedValue & NOTIFICATION_UPDATE) != 0) {
-                // ESP_LOGI("player.cpp", "Notified!");
+        if(xQueueReceive(eventQueue, &event, 1000)) {
+            if(event.type == EVENT_UPDATE) {
                 update();
-                // uint64_t end = esp_timer_get_time();
-                // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
+            } else {
+                handleEvent(event);
             }
-            if((ulNotifiedValue & NOTIFICATION_EVENT) != 0) {
-                if(xQueueReceive(eventQueue, &event, 10)) {
-                    // ESP_LOGI("player.cpp", "Received Event!");
-                    handleEvent(event);
-                    if(event.type == EVENT_RESET) {
-                        break;
-                    }
-                } else {
-                    // ESP_LOGI("player.cpp", "xQueueReceive Timeout!");
-                }
-            }
-            // uint64_t end = esp_timer_get_time();
-            // ESP_LOGI("Player_Loop()", "loop takes: %llu us", end - start);
         }
     }
 
@@ -106,8 +90,12 @@ void Player::changeState(State& newState) {
 // ================= Timer Function Implementation =================
 
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_ctx) {
-    Player& player = Player::getInstance();
-    xTaskNotify(player.getTaskHandle(), NOTIFICATION_UPDATE, eSetBits);
+    Event e;
+    e.type = EVENT_UPDATE;
+    e.data = 0;
+
+    Player::getInstance().sendEvent(e);
+
     return false;
 }
 
@@ -130,10 +118,12 @@ esp_err_t Player::initTimer() {
 
     return ESP_OK;
 }
+
 esp_err_t Player::clearTimer() {
     gptimer_set_raw_count(gptimer, 0);
     return ESP_OK;
 }
+
 void Player::startTimer(int fps) {
     uint32_t period = 1 * 1000 * 1000 / fps;
 
@@ -167,7 +157,7 @@ esp_err_t Player::initDrivers() {
         ch_info.i2c_leds[i] = 1;
     }
 
-    controller.init(ch_info);
+    controller.init();
     return ESP_OK;
 }
 
@@ -254,8 +244,9 @@ esp_err_t Player::performHardwareReset() {
         isHardwareInitialized.Drivers = false;
     }
     if(isHardwareInitialized.Buffers) {
-        if(freeBuffers() != ESP_OK)
-            ESP_LOGW("Reset", "Free Buffers Failed");
+        // if(freeBuffers() != ESP_OK)
+        //     ESP_LOGW("Reset", "Free Buffers Failed");
+        fb.deinit();
         isHardwareInitialized.Buffers = false;
     }
 
@@ -271,10 +262,11 @@ esp_err_t Player::performHardwareReset() {
     }
     isHardwareInitialized.Drivers = true;
 
-    if(allocateBuffers() != ESP_OK) {
-        ESP_LOGW("Reset", "Alloc Buffer Failed!");
-        return ESP_FAIL;
-    }
+    // if(allocateBuffers() != ESP_OK) {
+    //     ESP_LOGW("Reset", "Alloc Buffer Failed!");
+    //     return ESP_FAIL;
+    // }
+    fb.init();
     isHardwareInitialized.Buffers = true;
 
     return ESP_OK;
@@ -291,10 +283,11 @@ esp_err_t Player::performHardwareClear() {
         return ESP_FAIL;
     }
 
-    if(clearBuffers() != ESP_OK) {
-        ESP_LOGW("Reset", "Clear Buffer Failed!");
-        return ESP_FAIL;
-    }
+    // if(clearBuffers() != ESP_OK) {
+    //     ESP_LOGW("Reset", "Clear Buffer Failed!");
+    //     return ESP_FAIL;
+    // }
+    fb.deinit();
 
     return ESP_OK;
 }

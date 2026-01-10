@@ -11,7 +11,7 @@ class LedController {
     LedController();
     ~LedController();
 
-    esp_err_t init(ch_info_t);
+    esp_err_t init();
     esp_err_t write_buffer(int ch_idx, uint8_t* data);
     esp_err_t show();
     esp_err_t deinit();

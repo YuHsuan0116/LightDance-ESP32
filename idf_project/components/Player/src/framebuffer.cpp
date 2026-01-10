@@ -11,7 +11,10 @@ void swap(table_frame_t* a, table_frame_t* b) {
     *b = tmp;
 }
 
-FrameBuffer::FrameBuffer() {
+FrameBuffer::FrameBuffer() {}
+FrameBuffer::~FrameBuffer() {}
+
+void FrameBuffer::init() {
     test_read_frame(&current);
     // print_table_frame(current);
 
@@ -20,7 +23,12 @@ FrameBuffer::FrameBuffer() {
 
     compute(0);
 }
-FrameBuffer::~FrameBuffer() {}
+
+void FrameBuffer::deinit() {
+    memset(&current, 0, sizeof(table_frame_t));
+    memset(&next, 0, sizeof(table_frame_t));
+    memset(&buffer, 0, sizeof(frame_data));
+}
 
 void FrameBuffer::compute(uint64_t time_ms) {
     // ESP_LOGI("fb", "current: %llu, now: %llu, next: %llu", current.timestamp, time_ms, next.timestamp);
@@ -66,6 +74,10 @@ void FrameBuffer::render(LedController& controller) {
     }
 }
 
+void FrameBuffer::get_buffer(frame_data* p) {
+    memcpy(p, &buffer, sizeof(frame_data));
+}
+
 void print_table_frame(const table_frame_t& frame) {
     ESP_LOGI(TAG, "=== table_frame_t ===");
     ESP_LOGI(TAG, "timestamp : %" PRIu64 " ms", frame.timestamp);
@@ -84,10 +96,10 @@ void print_frame_data(const frame_data& data) {
         if(len > 100)
             len = 100;
 
-        int dump = (len > 2) ? 2 : len;
+        int dump = (len > 5) ? 5 : len;
 
         ESP_LOGI(TAG, "  CH %d (len=%d):", ch, len);
-        for(int i = 0; i < dump; i++) {
+        for(int i = 70; i < 70 + dump; i++) {
             const grb8_t& p = data.ws2812b[ch][i];
             ESP_LOGI(TAG, "    [%d] G=%u R=%u B=%u", i, p.g, p.r, p.b);
         }
@@ -101,6 +113,10 @@ void print_frame_data(const frame_data& data) {
         const grb8_t& p = data.pca9955b[i];
         ESP_LOGI(TAG, "  CH %2d: G=%u R=%u B=%u", i, p.g, p.r, p.b);
     }
+}
+
+void FrameBuffer::print_buffer() {
+    print_frame_data(buffer);
 }
 
 static uint8_t brightness = 63;

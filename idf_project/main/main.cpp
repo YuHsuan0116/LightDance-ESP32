@@ -70,6 +70,13 @@ void test1() {
     ws2812b_del(&ws2);
 }
 
+frame_data frame;
+grb8_t pool[3] = {
+    red,
+    green,
+    blue,
+};
+
 void app_main() {
 
     for(int i = 0; i < WS2812B_NUM; i++) {
@@ -79,19 +86,78 @@ void app_main() {
         ch_info.i2c_leds[i] = 1;
     }
 
+    // ws2812b_handle_t ws[WS2812B_NUM];
+    // for(int i = 0; i < WS2812B_NUM; i++) {
+    //     ws2812b_init(BOARD_HW_CONFIG.rmt_pins[i], 100, &ws[i]);
+    // }
+
+    // LedController controller;
+    // controller.init();
+
+    // for(int i = 0; i < 100; i++) {
+    // for(int j = 0; j < 100; j++) {
+    //     frame.ws2812b[0][j] = pool[i % 3];
+    // }
+
+    // for(int j = 0; j < WS2812B_NUM; j++) {
+    //     ws2812b_write(ws[j], (uint8_t*)frame.ws2812b[0]);
+    //     // ws2812b_fill(ws[j], pool[i % 3].r, pool[i % 3].g, pool[i % 3].b);
+    // }
+
+    // controller.fill(pool[i % 3].r, pool[i % 3].g, pool[i % 3].b);
+
+    // uint64_t start = esp_timer_get_time();
+    // for(int j = 0; j < WS2812B_NUM / 2; j++) {
+    //     ws2812b_show(ws[j]);
+    // }
+
+    // for(int j = 0; j < WS2812B_NUM / 2; j++) {
+    //     ws2812b_wait_done(ws[j]);
+    // }
+
+    // for(int j = 8 / 2; j < 8; j++) {
+    //     ws2812b_show(ws[j]);
+    // }
+
+    // for(int j = 8 / 2; j < 8; j++) {
+    //     ws2812b_wait_done(ws[j]);
+    // }
+    //     controller.show();
+
+    //     uint64_t end = esp_timer_get_time();
+    //     ESP_LOGI("main", "%llu us", end - start);
+
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
+
+    // controller.deinit();
+
+    // for(int i = 0; i < WS2812B_NUM; i++) {
+    //     ws2812b_del(&ws[i]);
+    // }
+
+    // for(int i = 0; i < PCA9955B_CH_NUM; i++) {
+    //     ch_info.i2c_leds[i] = 1;
+    // }
+
     static LedController controller;
-    controller.init(ch_info);
+    controller.init();
 
     static FrameBuffer fb;
-    vTaskDelay(pdMS_TO_TICKS(1000));
 
     uint64_t start = esp_timer_get_time();
     ESP_LOGI("main", "start at: %llu", start / 1000);
-    for(int i = 0; i < 100; i++) {
+    for(int i = 0; i < 1000; i++) {
+        uint64_t t1 = esp_timer_get_time();
         controller.show();
+        uint64_t t2 = esp_timer_get_time();
         fb.compute((esp_timer_get_time() - start) / 1000);
+        uint64_t t3 = esp_timer_get_time();
         fb.render(controller);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        uint64_t t4 = esp_timer_get_time();
+        ESP_LOGI("main", "%llu us, %llu us, %llu us", t2 - t1, t3 - t2, t4 - t3);
+        // fb.print_buffer();
+        // vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     controller.deinit();

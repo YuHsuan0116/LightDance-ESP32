@@ -12,6 +12,8 @@ void ErrorState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Error!");
 #endif
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
     if(player.init_retry_count < 3) {
         player.init_retry_count++;
         player.changeState(ResetState::getInstance());
@@ -78,10 +80,11 @@ void ReadyState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Ready!");
 #endif
+
     if(player.performHardwareClear() != ESP_OK || player.fillBuffers() != ESP_OK) {
+        player.init_retry_count = 0;
         player.changeState(ErrorState::getInstance());
     }
-    player.init_retry_count = 0;
 
     vTaskDelay(pdMS_TO_TICKS(1));
 }
@@ -147,7 +150,7 @@ void PlayingState::handleEvent(Player& player, Event& event) {
 }
 void PlayingState::update(Player& player) {
     player.showFrame();
-    if(!player.computeFrame()){
+    if(!player.computeFrame()) {
         player.changeState(ReadyState::getInstance());
     }
 
@@ -234,7 +237,6 @@ void TestState::handleEvent(Player& player, Event& event) {
 void TestState::update(Player& player) {
     player.showFrame();
     player.computeTestFrame();
-
 
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Update!");

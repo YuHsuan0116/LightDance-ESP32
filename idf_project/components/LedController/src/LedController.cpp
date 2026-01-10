@@ -18,9 +18,8 @@ LedController::LedController() {}
 
 LedController::~LedController() {}
 
-esp_err_t LedController::init(ch_info_t _ch_info) {
+esp_err_t LedController::init() {
     esp_err_t ret = ESP_OK;
-    ch_info = _ch_info;
 
     // 1. Input Validation
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(GPIO_NUM_21), ESP_ERR_INVALID_ARG, TAG, "Invalid SDA GPIO");
@@ -103,8 +102,44 @@ esp_err_t LedController::show() {
     uint64_t start = esp_timer_get_time();
 #endif
 
+    // // 1. Trigger WS2812B transmission (Asynchronous/Non-blocking)
+    // for(int i = 0; i < WS2812B_NUM; i++) {
+    //     if(ws2812b_devs[i]) {
+    //         err = ws2812b_show(ws2812b_devs[i]);
+    //         if(err != ESP_OK) {
+    //             // Log error but continue to try updating other LEDs
+    //             ESP_LOGE(TAG, "Failed to show WS2812B[%d]: %s", i, esp_err_to_name(err));
+    //             ret = err;  // Latch the error code
+    //         }
+    //     }
+    // }
+
+    // // 2. Trigger PCA9955B transmission (Synchronous/Blocking)
+    // for(int i = 0; i < PCA9955B_NUM; i++) {
+    //     if(pca9955b_devs[i]) {
+    //         err = pca9955b_show(pca9955b_devs[i]);
+    //         if(err != ESP_OK) {
+    //             ESP_LOGE(TAG, "Failed to show PCA9955B[%d]: %s", i, esp_err_to_name(err));
+    //             ret = err;
+    //         }
+    //     }
+    // }
+
+    // // 3. Wait for WS2812B transmission to complete
+    // for(int i = 0; i < WS2812B_NUM; i++) {
+    //     if(ws2812b_devs[i]) {
+    //         err = ws2812b_wait_done(ws2812b_devs[i]);
+    //         if(err != ESP_OK) {
+    //             ESP_LOGE(TAG, "Wait done failed for WS2812B[%d]: %s", i, esp_err_to_name(err));
+    //             ret = err;
+    //         }
+    //     }
+    // }
+
+    // ==============================================================
+
     // 1. Trigger WS2812B transmission (Asynchronous/Non-blocking)
-    for(int i = 0; i < WS2812B_NUM; i++) {
+    for(int i = 0; i < WS2812B_NUM / 2; i++) {
         if(ws2812b_devs[i]) {
             err = ws2812b_show(ws2812b_devs[i]);
             if(err != ESP_OK) {
@@ -116,7 +151,7 @@ esp_err_t LedController::show() {
     }
 
     // 2. Trigger PCA9955B transmission (Synchronous/Blocking)
-    for(int i = 0; i < PCA9955B_NUM; i++) {
+    for(int i = 0; i < PCA9955B_NUM / 2; i++) {
         if(pca9955b_devs[i]) {
             err = pca9955b_show(pca9955b_devs[i]);
             if(err != ESP_OK) {
@@ -127,7 +162,41 @@ esp_err_t LedController::show() {
     }
 
     // 3. Wait for WS2812B transmission to complete
-    for(int i = 0; i < WS2812B_NUM; i++) {
+    for(int i = 0; i < WS2812B_NUM / 2; i++) {
+        if(ws2812b_devs[i]) {
+            err = ws2812b_wait_done(ws2812b_devs[i]);
+            if(err != ESP_OK) {
+                ESP_LOGE(TAG, "Wait done failed for WS2812B[%d]: %s", i, esp_err_to_name(err));
+                ret = err;
+            }
+        }
+    }
+
+    // 1. Trigger WS2812B transmission (Asynchronous/Non-blocking)
+    for(int i = WS2812B_NUM / 2; i < WS2812B_NUM; i++) {
+        if(ws2812b_devs[i]) {
+            err = ws2812b_show(ws2812b_devs[i]);
+            if(err != ESP_OK) {
+                // Log error but continue to try updating other LEDs
+                ESP_LOGE(TAG, "Failed to show WS2812B[%d]: %s", i, esp_err_to_name(err));
+                ret = err;  // Latch the error code
+            }
+        }
+    }
+
+    // 2. Trigger PCA9955B transmission (Synchronous/Blocking)
+    for(int i = PCA9955B_NUM / 2; i < PCA9955B_NUM; i++) {
+        if(pca9955b_devs[i]) {
+            err = pca9955b_show(pca9955b_devs[i]);
+            if(err != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to show PCA9955B[%d]: %s", i, esp_err_to_name(err));
+                ret = err;
+            }
+        }
+    }
+
+    // 3. Wait for WS2812B transmission to complete
+    for(int i = WS2812B_NUM / 2; i < WS2812B_NUM; i++) {
         if(ws2812b_devs[i]) {
             err = ws2812b_wait_done(ws2812b_devs[i]);
             if(err != ESP_OK) {
@@ -259,7 +328,7 @@ void Controller_test() {
         ch_info.i2c_leds[i] = 1;
     }
 
-    ret = controller.init(ch_info);
+    ret = controller.init();
     if(ret != ESP_OK) {
         ESP_LOGE(TAG_TEST, "Init failed");
         return;

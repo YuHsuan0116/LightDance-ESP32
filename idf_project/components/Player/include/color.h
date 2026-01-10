@@ -6,11 +6,11 @@ typedef struct {
     uint8_t green, red, blue;
 } pixel_t;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t g, r, b;
 } grb8_t;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint16_t h;  // h: 0..1535
     uint8_t s, v;
 } hsv8_t;

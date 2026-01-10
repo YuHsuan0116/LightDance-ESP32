@@ -5,6 +5,7 @@
 #include "freertos/queue.h"
 
 #include "LedController.hpp"
+#include "framebuffer.h"
 
 typedef enum {
     EVENT_PLAY,
@@ -12,6 +13,7 @@ typedef enum {
     EVENT_PAUSE,
     EVENT_RESET,
     EVENT_READY,
+    EVENT_UPDATE,
 } event_t;
 
 struct Event {
@@ -69,7 +71,7 @@ class Player {
 
     gptimer_handle_t gptimer;
     LedController controller;
-    uint8_t** buffers;
+    FrameBuffer fb;
 
     TaskHandle_t taskHandle;
     QueueHandle_t eventQueue;
