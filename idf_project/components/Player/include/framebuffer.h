@@ -2,11 +2,11 @@
 
 #include "esp_err.h"
 
-#include "LedController.hpp"
+#include "LedController_v2.hpp"
 #include "color.h"
 
-typedef struct __attribute__((packed)) {
-    grb8_t ws2812b[WS2812B_NUM][100];
+typedef struct {
+    grb8_t ws2812b[WS2812B_NUM][WS2812B_MAX_PIXEL_NUM];
     grb8_t pca9955b[PCA9955B_CH_NUM];
 } frame_data;
 

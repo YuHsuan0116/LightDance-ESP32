@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS  "src/LedController.cpp" "src/pca9955b_hal.c" "src/ws2812b_encoder.c" "src/ws2812b_hal.c" "src/BoardConfig.c"
+    SRCS  "src/LedController.cpp" "src/pca9955b_hal.c" "src/ws2812b_encoder.c" "src/ws2812b_hal.c"  "src/BoardConfig.c"
 
     INCLUDE_DIRS "include"
 
