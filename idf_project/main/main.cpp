@@ -22,12 +22,15 @@ grb8_t pool[3] = {
     blue,
 };
 
-LedController controller;
-FrameBuffer fb;
+static LedController controller;
+static FrameBuffer fb;
+
+size_t a = sizeof(controller);
+size_t b = sizeof(FrameBuffer);
 
 void app_main() {
     for(int i = 0; i < WS2812B_NUM; i++) {
-        ch_info.rmt_strips[i] = 100;
+        ch_info.rmt_strips[i] = WS2812B_MAX_PIXEL_NUM;
     }
     for(int i = 0; i < PCA9955B_CH_NUM; i++) {
         ch_info.i2c_leds[i] = 1;
@@ -42,6 +45,8 @@ void app_main() {
         fb.compute(esp_timer_get_time() / 1000);
         fb.render(controller);
     }
+
+    ESP_LOGI("main", "end!");
 
     controller.deinit();
 }

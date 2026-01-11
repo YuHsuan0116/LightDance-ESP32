@@ -31,8 +31,10 @@ class FrameBuffer {
     void get_buffer(frame_data* p);
 
   private:
-    table_frame_t current;
-    table_frame_t next;
+    table_frame_t frame0, frame1;
+
+    table_frame_t* current;
+    table_frame_t* next;
 
     frame_data buffer;
 };

@@ -5,20 +5,23 @@
 
 static const char* TAG = "fb";
 
-void swap(table_frame_t* a, table_frame_t* b) {
-    table_frame_t tmp = *a;
-    *a = *b;
-    *b = tmp;
+void swap(table_frame_t*& a, table_frame_t*& b) {
+    table_frame_t* tmp = a;
+    a = b;
+    b = tmp;
 }
 
-FrameBuffer::FrameBuffer() {}
+FrameBuffer::FrameBuffer() {
+    current = &frame0;
+    next = &frame1;
+}
 FrameBuffer::~FrameBuffer() {}
 
 void FrameBuffer::init() {
-    test_read_frame(&current);
+    test_read_frame(current);
     // print_table_frame(current);
 
-    test_read_frame(&next);
+    test_read_frame(next);
     // print_table_frame(next);
 
     compute(0);
@@ -32,17 +35,17 @@ void FrameBuffer::deinit() {
 
 void FrameBuffer::compute(uint64_t time_ms) {
     // ESP_LOGI("fb", "current: %llu, now: %llu, next: %llu", current.timestamp, time_ms, next.timestamp);
-    if(time_ms >= next.timestamp) {
-        swap(&current, &next);
-        test_read_frame(&next);
+    if(time_ms >= next->timestamp) {
+        swap(current, next);
+        test_read_frame(next);
         // print_table_frame(next);
     }
 
-    const uint64_t t1 = current.timestamp;
-    const uint64_t t2 = next.timestamp;
+    const uint64_t t1 = current->timestamp;
+    const uint64_t t2 = next->timestamp;
     uint8_t p = 0;
 
-    if(current.fade && t2 > t1) {
+    if(current->fade && t2 > t1) {
         uint64_t dt = time_ms - t1;
         uint64_t dur = t2 - t1;
         if(dt >= dur) {
@@ -54,11 +57,11 @@ void FrameBuffer::compute(uint64_t time_ms) {
 
     for(int ch_idx = 0; ch_idx < WS2812B_NUM; ch_idx++) {
         for(int pixel_idx = 0; pixel_idx < ch_info.rmt_strips[ch_idx]; pixel_idx++) {
-            buffer.ws2812b[ch_idx][pixel_idx] = grb_lerp_hsv_u8(current.data.ws2812b[ch_idx][pixel_idx], next.data.ws2812b[ch_idx][pixel_idx], p);
+            buffer.ws2812b[ch_idx][pixel_idx] = grb_lerp_hsv_u8(current->data.ws2812b[ch_idx][pixel_idx], next->data.ws2812b[ch_idx][pixel_idx], p);
         }
     }
     for(int ch_idx = 0; ch_idx < PCA9955B_CH_NUM; ch_idx++) {
-        buffer.pca9955b[ch_idx] = grb_lerp_hsv_u8(current.data.pca9955b[ch_idx], next.data.pca9955b[ch_idx], p);
+        buffer.pca9955b[ch_idx] = grb_lerp_hsv_u8(current->data.pca9955b[ch_idx], next->data.pca9955b[ch_idx], p);
     }
 
     // print_frame_data(buffer);
@@ -119,7 +122,7 @@ void FrameBuffer::print_buffer() {
     print_frame_data(buffer);
 }
 
-static uint8_t brightness = 63;
+static uint8_t brightness = 31;
 
 static grb8_t red = {.g = 0, .r = brightness, .b = 0};
 static grb8_t green = {.g = brightness, .r = 0, .b = 0};
