@@ -129,7 +129,7 @@ static grb8_t color_pool[3] = {red, green, blue};
 static int count = 0;
 
 void test_read_frame(table_frame_t* p) {
-    p->timestamp = count * 1000;
+    p->timestamp = count * 2000;
     p->fade = true;
     for(int ch_idx = 0; ch_idx < WS2812B_NUM; ch_idx++) {
         for(int i = 0; i < ch_info.rmt_strips[ch_idx]; i++) {

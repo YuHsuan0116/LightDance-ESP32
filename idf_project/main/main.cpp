@@ -146,7 +146,6 @@ void app_main() {
     static FrameBuffer fb;
 
     uint64_t start = esp_timer_get_time();
-    ESP_LOGI("main", "start at: %llu", start / 1000);
     for(int i = 0; i < 1000; i++) {
         uint64_t t1 = esp_timer_get_time();
         controller.show();
@@ -155,7 +154,7 @@ void app_main() {
         uint64_t t3 = esp_timer_get_time();
         fb.render(controller);
         uint64_t t4 = esp_timer_get_time();
-        ESP_LOGI("main", "%llu us, %llu us, %llu us", t2 - t1, t3 - t2, t4 - t3);
+        // ESP_LOGI("main", "%llu us, %llu us, %llu us", t2 - t1, t3 - t2, t4 - t3);
         // fb.print_buffer();
         // vTaskDelay(pdMS_TO_TICKS(10));
     }

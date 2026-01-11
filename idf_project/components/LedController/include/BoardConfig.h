@@ -7,6 +7,8 @@
  */
 #define WS2812B_NUM 8
 
+#define WS2812B_MAX_PIXEL_NUM 100
+
 /**
  * @brief Number of PCA9955B constant-current LED driver ICs on the I2C bus.
  */
@@ -30,12 +32,12 @@
 /**
  * @brief Maximum time (in milliseconds) allowed for a single I2C transaction.
  */
-#define I2C_TIMEOUT_MS 20
+#define I2C_TIMEOUT_MS 2
 
 /**
  * @brief Maximum time (in milliseconds) allowed for RMT (Remote Control peripheral) operations.
  */
-#define RMT_TIMEOUT_MS 20
+#define RMT_TIMEOUT_MS 5
 
 /**
  * @brief Hardware LED channel configuration.
