@@ -7,17 +7,49 @@
 #include "esp_system.h"
 #include "esp_vfs_fat.h"
 
-#include "player.h"
+#include "player_v2.hpp"
 
 #define PROMPT_STR "cmd"
 
-static Event e;
 static esp_console_repl_t* repl = NULL;
 static esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
 
+static int sendInit(int argc, char** argv) {
+    Player::getInstance().init();
+    return 0;
+}
+
+static void register_sendInit(void) {
+    const esp_console_cmd_t cmd = {.command = "init",
+                                   .help = "send play",
+                                   .hint = NULL,
+                                   .func = &sendInit,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
+static int sendDeinit(int argc, char** argv) {
+    Player::getInstance().deinit();
+    return 0;
+}
+
+static void register_sendDeinit(void) {
+    const esp_console_cmd_t cmd = {.command = "deinit",
+                                   .help = "send play",
+                                   .hint = NULL,
+                                   .func = &sendDeinit,
+
+                                   .argtable = NULL,
+                                   .func_w_context = NULL,
+                                   .context = NULL};
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
 static int sendPlay(int argc, char** argv) {
-    e.type = EVENT_PLAY;
-    Player::getInstance().sendEvent(e);
+    Player::getInstance().play();
     return 0;
 }
 
@@ -34,8 +66,7 @@ static void register_sendPlay(void) {
 }
 
 static int sendPause(int argc, char** argv) {
-    e.type = EVENT_PAUSE;
-    Player::getInstance().sendEvent(e);
+    Player::getInstance().pause();
     return 0;
 }
 
@@ -52,8 +83,13 @@ static void register_sendPause(void) {
 }
 
 static int sendTest(int argc, char** argv) {
-    e.type = EVENT_TEST;
-    Player::getInstance().sendEvent(e);
+    if(argc == 4) {
+        uint8_t r = atoi(argv[1]);
+        uint8_t g = atoi(argv[2]);
+        uint8_t b = atoi(argv[3]);
+
+        Player::getInstance().test(r, g, b);
+    }
     return 0;
 }
 
@@ -70,8 +106,7 @@ static void register_sendTest(void) {
 }
 
 static int sendReset(int argc, char** argv) {
-    e.type = EVENT_RESET;
-    Player::getInstance().sendEvent(e);
+    Player::getInstance().reset();
     return 0;
 }
 
@@ -80,24 +115,6 @@ static void register_sendReset(void) {
                                    .help = "send reset",
                                    .hint = NULL,
                                    .func = &sendReset,
-
-                                   .argtable = NULL,
-                                   .func_w_context = NULL,
-                                   .context = NULL};
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
-}
-
-static int sendExit(int argc, char** argv) {
-    e.type = EVENT_RESET;
-    Player::getInstance().sendEvent(e);
-    return 0;
-}
-
-static void register_sendExit(void) {
-    const esp_console_cmd_t cmd = {.command = "exit",
-                                   .help = "send exit",
-                                   .hint = NULL,
-                                   .func = &sendExit,
 
                                    .argtable = NULL,
                                    .func_w_context = NULL,
@@ -126,8 +143,9 @@ static void register_cmd() {
     register_sendPlay();
     register_sendPause();
     register_sendReset();
-    register_sendExit();
     register_sendTest();
+    register_sendInit();
+    register_sendDeinit();
     register_stop_console();
 }
 

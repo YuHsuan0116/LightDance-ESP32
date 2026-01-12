@@ -21,14 +21,15 @@ class FrameBuffer {
     FrameBuffer();
     ~FrameBuffer();
 
-    void init();
-    void deinit();
+    esp_err_t init();
+    esp_err_t reset();
+    esp_err_t deinit();
 
     void compute(uint64_t time_ms);
     void render(LedController& controller);
 
     void print_buffer();
-    void get_buffer(frame_data* p);
+    frame_data* get_buffer();
 
   private:
     table_frame_t frame0, frame1;

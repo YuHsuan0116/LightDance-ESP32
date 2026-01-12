@@ -7,7 +7,7 @@
  */
 #define WS2812B_NUM 8
 
-#define WS2812B_MAX_PIXEL_NUM 300
+#define WS2812B_MAX_PIXEL_NUM 100
 
 /**
  * @brief Number of PCA9955B constant-current LED driver ICs on the I2C bus.

@@ -5,6 +5,8 @@
 
 static const char* TAG = "fb";
 
+static int count = 0;
+
 void swap(table_frame_t*& a, table_frame_t*& b) {
     table_frame_t* tmp = a;
     a = b;
@@ -17,7 +19,8 @@ FrameBuffer::FrameBuffer() {
 }
 FrameBuffer::~FrameBuffer() {}
 
-void FrameBuffer::init() {
+esp_err_t FrameBuffer::init() {
+    count = 0;
     test_read_frame(current);
     // print_table_frame(current);
 
@@ -25,12 +28,25 @@ void FrameBuffer::init() {
     // print_table_frame(next);
 
     compute(0);
+
+    return ESP_OK;
 }
 
-void FrameBuffer::deinit() {
-    memset(&current, 0, sizeof(table_frame_t));
-    memset(&next, 0, sizeof(table_frame_t));
+esp_err_t FrameBuffer::reset() {
+    count = 0;
+    test_read_frame(current);
+    test_read_frame(next);
+    compute(0);
+
+    return ESP_OK;
+}
+
+esp_err_t FrameBuffer::deinit() {
+    memset(&frame0, 0, sizeof(table_frame_t));
+    memset(&frame1, 0, sizeof(table_frame_t));
     memset(&buffer, 0, sizeof(frame_data));
+
+    return ESP_OK;
 }
 
 void FrameBuffer::compute(uint64_t time_ms) {
@@ -77,8 +93,8 @@ void FrameBuffer::render(LedController& controller) {
     }
 }
 
-void FrameBuffer::get_buffer(frame_data* p) {
-    memcpy(p, &buffer, sizeof(frame_data));
+frame_data* FrameBuffer::get_buffer() {
+    return &buffer;
 }
 
 void print_table_frame(const table_frame_t& frame) {
@@ -128,8 +144,6 @@ static grb8_t red = {.g = 0, .r = brightness, .b = 0};
 static grb8_t green = {.g = brightness, .r = 0, .b = 0};
 static grb8_t blue = {.g = 0, .r = 0, .b = brightness};
 static grb8_t color_pool[3] = {red, green, blue};
-
-static int count = 0;
 
 void test_read_frame(table_frame_t* p) {
     p->timestamp = count * 2000;

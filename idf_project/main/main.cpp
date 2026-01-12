@@ -5,6 +5,7 @@
 // #include "player.h"
 
 #include "framebuffer.h"
+#include "player_v2.hpp"
 
 extern "C" void app_main();
 
@@ -28,25 +29,16 @@ static FrameBuffer fb;
 size_t a = sizeof(controller);
 size_t b = sizeof(FrameBuffer);
 
+TaskHandle_t t;
+
+void test(void* parmeter) {}
+
 void app_main() {
-    for(int i = 0; i < WS2812B_NUM; i++) {
-        ch_info.rmt_strips[i] = WS2812B_MAX_PIXEL_NUM;
-    }
-    for(int i = 0; i < PCA9955B_CH_NUM; i++) {
-        ch_info.i2c_leds[i] = 1;
-    }
 
-    controller.init();
-    fb.init();
+    start_console();
 
-    while(esp_timer_get_time() <= 10 * 1000 * 1000) {
-        controller.show();
+    // xTaskCreate(test, NULL, 2048, NULL, 5, &t);
 
-        fb.compute(esp_timer_get_time() / 1000);
-        fb.render(controller);
-    }
-
-    ESP_LOGI("main", "end!");
-
-    controller.deinit();
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    // p.test(63, 0, 0);
 }

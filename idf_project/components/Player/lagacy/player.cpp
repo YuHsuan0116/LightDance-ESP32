@@ -29,7 +29,6 @@ TaskHandle_t& Player::getTaskHandle() {
 
 void Player::sendEvent(Event& event) {
     xQueueSend(eventQueue, &event, 1000);
-    // xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
 }
 
 void Player::start() {
