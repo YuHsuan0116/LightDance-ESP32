@@ -20,76 +20,96 @@ FrameBuffer::FrameBuffer() {
 FrameBuffer::~FrameBuffer() {}
 
 esp_err_t FrameBuffer::init() {
+    current = &frame0;
+    next = &frame1;
+
+    memset(&frame0, 0, sizeof(frame0));
+    memset(&frame1, 0, sizeof(frame1));
+    memset(&buffer, 0, sizeof(buffer));
+
     count = 0;
     test_read_frame(current);
-    // print_table_frame(current);
-
     test_read_frame(next);
-    // print_table_frame(next);
-
-    compute(0);
 
     return ESP_OK;
 }
 
 esp_err_t FrameBuffer::reset() {
+    current = &frame0;
+    next = &frame1;
+
+    memset(&frame0, 0, sizeof(frame0));
+    memset(&frame1, 0, sizeof(frame1));
+    memset(&buffer, 0, sizeof(buffer));
+
     count = 0;
     test_read_frame(current);
     test_read_frame(next);
-    compute(0);
 
     return ESP_OK;
 }
 
 esp_err_t FrameBuffer::deinit() {
-    memset(&frame0, 0, sizeof(table_frame_t));
-    memset(&frame1, 0, sizeof(table_frame_t));
-    memset(&buffer, 0, sizeof(frame_data));
-
     return ESP_OK;
 }
 
 void FrameBuffer::compute(uint64_t time_ms) {
-    // ESP_LOGI("fb", "current: %llu, now: %llu, next: %llu", current.timestamp, time_ms, next.timestamp);
-    if(time_ms >= next->timestamp) {
-        swap(current, next);
-        test_read_frame(next);
-        // print_table_frame(next);
+    if(current == nullptr || next == nullptr) {
+        ESP_LOGE(TAG, "FrameBuffer not initialized");
+        return;
     }
+
+    if(time_ms < current->timestamp) {
+        buffer = current->data;
+        return;
+    }
+
+    while(time_ms >= next->timestamp) {
+        std::swap(current, next);
+        test_read_frame(next);
+        if(next->timestamp <= current->timestamp) {
+            ESP_LOGE(TAG, "Non-monotonic timestamp: current=%" PRIu64 ", next=%" PRIu64, current->timestamp, next->timestamp);
+            buffer = current->data;
+            return;
+        }
+    }
+
+    uint8_t p = 0;
 
     const uint64_t t1 = current->timestamp;
     const uint64_t t2 = next->timestamp;
-    uint8_t p = 0;
 
-    if(current->fade && t2 > t1) {
-        uint64_t dt = time_ms - t1;
-        uint64_t dur = t2 - t1;
-        if(dt >= dur) {
+    if(current->fade) {
+        if(t2 <= t1) {
+            p = 255;
+        } else if(time_ms >= t2) {
             p = 255;
         } else {
-            p = (uint8_t)(dt * 255 / dur);
+            const uint64_t dt = time_ms - t1;
+            const uint64_t dur = t2 - t1;
+            p = (uint8_t)((dt * 255) / dur);
+        }
+    } else {
+        p = (time_ms >= t2) ? 255 : 0;
+    }
+
+    for(int ch = 0; ch < WS2812B_NUM; ch++) {
+        int len = ch_info.rmt_strips[ch];
+        if(len < 0)
+            len = 0;
+        if(len > WS2812B_MAX_PIXEL_NUM)
+            len = WS2812B_MAX_PIXEL_NUM;
+
+        for(int i = 0; i < len; i++) {
+            buffer.ws2812b[ch][i] = grb_lerp_hsv_u8(current->data.ws2812b[ch][i], next->data.ws2812b[ch][i], p);
+        }
+        for(int i = len; i < WS2812B_MAX_PIXEL_NUM; i++) {
+            buffer.ws2812b[ch][i] = {0, 0, 0};
         }
     }
 
-    for(int ch_idx = 0; ch_idx < WS2812B_NUM; ch_idx++) {
-        for(int pixel_idx = 0; pixel_idx < ch_info.rmt_strips[ch_idx]; pixel_idx++) {
-            buffer.ws2812b[ch_idx][pixel_idx] = grb_lerp_hsv_u8(current->data.ws2812b[ch_idx][pixel_idx], next->data.ws2812b[ch_idx][pixel_idx], p);
-        }
-    }
-    for(int ch_idx = 0; ch_idx < PCA9955B_CH_NUM; ch_idx++) {
-        buffer.pca9955b[ch_idx] = grb_lerp_hsv_u8(current->data.pca9955b[ch_idx], next->data.pca9955b[ch_idx], p);
-    }
-
-    // print_frame_data(buffer);
-}
-
-void FrameBuffer::render(LedController& controller) {
-    for(int i = 0; i < WS2812B_NUM; i++) {
-        controller.write_buffer(i, (uint8_t*)buffer.ws2812b[i]);
-    }
-
-    for(int i = 0; i < PCA9955B_CH_NUM; i++) {
-        controller.write_buffer(i + WS2812B_NUM, (uint8_t*)&buffer.pca9955b[i]);
+    for(int ch = 0; ch < PCA9955B_CH_NUM; ch++) {
+        buffer.pca9955b[ch] = grb_lerp_hsv_u8(current->data.pca9955b[ch], next->data.pca9955b[ch], p);
     }
 }
 
@@ -150,7 +170,7 @@ void test_read_frame(table_frame_t* p) {
     p->fade = true;
     for(int ch_idx = 0; ch_idx < WS2812B_NUM; ch_idx++) {
         for(int i = 0; i < ch_info.rmt_strips[ch_idx]; i++) {
-            p->data.ws2812b[ch_idx][i] = color_pool[count % 3];
+            p->data.ws2812b[ch_idx][i] = grb_lerp_hsv_u8(color_pool[count % 3], color_pool[(count + 1) % 3], i * 255 / ch_info.rmt_strips[ch_idx]);
         }
     }
     for(int ch_idx = 0; ch_idx < PCA9955B_CH_NUM; ch_idx++) {

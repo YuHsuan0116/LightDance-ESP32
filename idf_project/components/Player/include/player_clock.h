@@ -8,6 +8,12 @@
 
 #include "player_protocal.h"
 
+enum class MetronomeState {
+    UNINIT,
+    STOPPED,
+    RUNNING,
+};
+
 class PlayerMetronome {
   public:
     PlayerMetronome();
@@ -22,12 +28,21 @@ class PlayerMetronome {
 
     esp_err_t set_period_us(uint32_t period_us);
 
+    bool is_running() const;
+
   private:
     gptimer_handle_t timer = nullptr;
-    TaskHandle_t task;
+    TaskHandle_t task = nullptr;
 
     uint32_t period_us = 0;
-    bool running = false;
+    MetronomeState state = MetronomeState::UNINIT;
+};
+
+enum class ClockState {
+    UNINIT,
+    STOPPED,
+    RUNNING,
+    PAUSED,
 };
 
 class PlayerClock {
@@ -45,11 +60,11 @@ class PlayerClock {
     int64_t now_us() const;
 
   private:
-    int64_t accumulated_us;
-    int64_t last_start_us;
-    bool is_playing;
-    bool initialized;
+    ClockState state = ClockState::UNINIT;
 
-    bool with_metronome;
+    int64_t accumulated_us = 0;
+    int64_t last_start_us = 0;
+
+    bool with_metronome = false;
     PlayerMetronome metronome;
 };
