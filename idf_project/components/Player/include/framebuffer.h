@@ -24,7 +24,7 @@ class FrameBuffer {
     void init();
     void deinit();
 
-    void compute(uint64_t time_ms);
+    bool compute(uint64_t time_ms);
     void render(LedController& controller);
 
     void print_buffer();
@@ -37,7 +37,7 @@ class FrameBuffer {
     frame_data buffer;
 };
 
-void test_read_frame(table_frame_t* p);
+bool test_read_frame(table_frame_t* p);
 
 void print_table_frame(const table_frame_t& frame);
 void print_frame_data(const frame_data& data);

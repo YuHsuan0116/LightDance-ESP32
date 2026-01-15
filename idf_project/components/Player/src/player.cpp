@@ -16,6 +16,8 @@ Player::Player() {
     isHardwareInitialized.Drivers = false;
     isHardwareInitialized.Buffers = false;
     playing_start_time = 0;
+    playing_elapsed_time_for_pause = 0;
+    FPS = 40;
 }
 
 Player& Player::getInstance() {
@@ -28,7 +30,17 @@ TaskHandle_t& Player::getTaskHandle() {
 }
 
 void Player::sendEvent(Event& event) {
-    xQueueSend(eventQueue, &event, 1000);
+    // in ISR?
+    if (xPortInIsrContext()) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(eventQueue, &event, &xHigherPriorityTaskWoken);
+        if (xHigherPriorityTaskWoken) {
+            portYIELD_FROM_ISR();
+        }
+    } 
+    else {
+        xQueueSend(eventQueue, &event, 1000);
+    }
     // xTaskNotify(taskHandle, NOTIFICATION_EVENT, eSetBits);
 }
 
@@ -56,15 +68,15 @@ void Player::taskEntry(void* pvParameters) {
 
 void Player::Loop() {
     currentState->enter(*this);
-
     Event event;
-    uint32_t ulNotifiedValue;
+    // uint32_t ulNotifiedValue;
 
     while(1) {
         if(xQueueReceive(eventQueue, &event, 1000)) {
             if(event.type == EVENT_UPDATE) {
                 update();
-            } else {
+            } 
+            else {
                 handleEvent(event);
             }
         }
@@ -92,7 +104,6 @@ void Player::changeState(State& newState) {
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t* edata, void* user_ctx) {
     Event e;
     e.type = EVENT_UPDATE;
-    e.data = 0;
 
     Player::getInstance().sendEvent(e);
 
@@ -121,6 +132,8 @@ esp_err_t Player::initTimer() {
 
 esp_err_t Player::clearTimer() {
     gptimer_set_raw_count(gptimer, 0);
+    playing_elapsed_time_for_pause = 0;
+
     return ESP_OK;
 }
 
@@ -172,6 +185,33 @@ esp_err_t Player::deinitDrivers() {
     vTaskDelay(pdMS_TO_TICKS(100));
 
     return ESP_OK;
+}
+
+// ================= Frame Buffer Management =================
+
+void Player::getStartTime(){
+    playing_start_time = esp_timer_get_time() / 1000 - playing_elapsed_time_for_pause;
+}
+void Player::getElapsedTime(){
+    uint64_t current_time = esp_timer_get_time() / 1000;
+    playing_elapsed_time_for_pause = current_time - playing_start_time;
+}
+
+esp_err_t Player::fillBuffers() {
+    fb.init();
+    return ESP_OK;
+}
+esp_err_t Player::clearBuffers() {
+    fb.deinit();
+    return ESP_OK;
+}
+
+bool Player::computeFrame(){
+    uint64_t current_time = esp_timer_get_time() / 1000;
+    uint64_t elapsed_time = current_time - playing_start_time + (1000/FPS);
+    bool keep_playing = fb.compute(elapsed_time);
+    fb.render(controller);
+    return keep_playing;
 }
 
 static int frame_idx = 0;
@@ -244,9 +284,8 @@ esp_err_t Player::performHardwareReset() {
         isHardwareInitialized.Drivers = false;
     }
     if(isHardwareInitialized.Buffers) {
-        // if(freeBuffers() != ESP_OK)
-        //     ESP_LOGW("Reset", "Free Buffers Failed");
-        fb.deinit();
+        if(clearBuffers() != ESP_OK)
+            ESP_LOGW("Reset", "Free Buffers Failed");
         isHardwareInitialized.Buffers = false;
     }
 
@@ -262,11 +301,10 @@ esp_err_t Player::performHardwareReset() {
     }
     isHardwareInitialized.Drivers = true;
 
-    // if(allocateBuffers() != ESP_OK) {
-    //     ESP_LOGW("Reset", "Alloc Buffer Failed!");
-    //     return ESP_FAIL;
-    // }
-    fb.init();
+    if(fillBuffers() != ESP_OK) {
+        ESP_LOGW("Reset", "Alloc Buffer Failed!");
+        return ESP_FAIL;
+    }
     isHardwareInitialized.Buffers = true;
 
     return ESP_OK;
@@ -283,11 +321,10 @@ esp_err_t Player::performHardwareClear() {
         return ESP_FAIL;
     }
 
-    // if(clearBuffers() != ESP_OK) {
-    //     ESP_LOGW("Reset", "Clear Buffer Failed!");
-    //     return ESP_FAIL;
-    // }
-    fb.deinit();
+    if(clearBuffers() != ESP_OK) {
+        ESP_LOGW("Reset", "Clear Buffer Failed!");
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }

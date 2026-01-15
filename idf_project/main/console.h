@@ -106,7 +106,7 @@ static void register_sendExit(void) {
 }
 
 static int stop_console(int argc, char** argv) {
-    esp_console_stop_repl(repl);
+    //esp_console_stop_repl(repl);
     return 0;
 }
 

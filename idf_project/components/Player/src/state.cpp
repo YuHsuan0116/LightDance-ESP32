@@ -124,12 +124,13 @@ void PlayingState::enter(Player& player) {
 #if SHOW_TRANSITION
     ESP_LOGI("state.cpp", "Enter Playing!");
 #endif
-    player.startTimer(10);
     player.getStartTime();
+    player.startTimer(player.FPS);
     player.update();
 }
 
 void PlayingState::exit(Player& player) {
+    player.getElapsedTime();
     player.stopTimer();
 
 #if SHOW_TRANSITION
@@ -209,7 +210,7 @@ void TestState::enter(Player& player) {
     ESP_LOGI("state.cpp", "Enter Test!");
 #endif
 
-    player.startTimer(10);
+    player.startTimer(player.FPS);
     player.getStartTime();
     player.update();
 }

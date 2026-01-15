@@ -18,7 +18,7 @@ typedef enum {
 
 struct Event {
     event_t type;
-    uint32_t data;
+    // uint32_t data;
 };
 
 class State;
@@ -90,7 +90,9 @@ class Player {
     void startTimer(int fps);
     void stopTimer();
 
+    int FPS;
     uint64_t playing_start_time;
+    uint64_t playing_elapsed_time_for_pause;
 
     // ================= Driver Function Implementation =================
 
@@ -100,13 +102,11 @@ class Player {
 
     // ================= Frame Buffer Management =================
 
-    esp_err_t allocateBuffers();
-    esp_err_t freeBuffers();
     esp_err_t clearBuffers();
     esp_err_t fillBuffers();
 
-    void buffersToController();
     void getStartTime();
+    void getElapsedTime();
     bool computeFrame();
     void computeTestFrame();
     void showFrame();

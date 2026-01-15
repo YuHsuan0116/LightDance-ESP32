@@ -1,4 +1,5 @@
 #include "framebuffer.h"
+#include <string.h>
 
 #include "algorithm"
 #include "esp_log.h"
@@ -30,14 +31,15 @@ void FrameBuffer::deinit() {
     memset(&buffer, 0, sizeof(frame_data));
 }
 
-void FrameBuffer::compute(uint64_t time_ms) {
+bool FrameBuffer::compute(uint64_t time_ms) {
     // ESP_LOGI("fb", "current: %llu, now: %llu, next: %llu", current.timestamp, time_ms, next.timestamp);
     if(time_ms >= next.timestamp) {
         swap(&current, &next);
-        test_read_frame(&next);
+        if(!test_read_frame(&next)){
+            return false;
+        };
         // print_table_frame(next);
     }
-
     const uint64_t t1 = current.timestamp;
     const uint64_t t2 = next.timestamp;
     uint8_t p = 0;
@@ -60,7 +62,8 @@ void FrameBuffer::compute(uint64_t time_ms) {
     for(int ch_idx = 0; ch_idx < PCA9955B_CH_NUM; ch_idx++) {
         buffer.pca9955b[ch_idx] = grb_lerp_hsv_u8(current.data.pca9955b[ch_idx], next.data.pca9955b[ch_idx], p);
     }
-
+    
+    return true;
     // print_frame_data(buffer);
 }
 
@@ -128,7 +131,7 @@ static grb8_t color_pool[3] = {red, green, blue};
 
 static int count = 0;
 
-void test_read_frame(table_frame_t* p) {
+bool test_read_frame(table_frame_t* p) {
     p->timestamp = count * 2000;
     p->fade = true;
     for(int ch_idx = 0; ch_idx < WS2812B_NUM; ch_idx++) {
@@ -142,4 +145,5 @@ void test_read_frame(table_frame_t* p) {
         }
     }
     count++;
+    return true;
 }
